@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import PublicShare from "./pages/PublicShare";
 import MainLayout from "./layouts/MainLayout";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -27,6 +28,10 @@ const App = () => {
           element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
         />
         <Route path="/signup" element={<Signup />} />
+
+        {/* PUBLIC SHARE — no login needed */}
+        <Route path="/share/:token" element={<PublicShare />} />
+
         <Route
           element={
             <ProtectedRoute>

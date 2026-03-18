@@ -107,7 +107,7 @@ exports.generatePublicLink = async (req, res) => {
       ],
     );
 
-    const publicUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/share/${token}`;
+    const publicUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/share/${token}`;
 
     res.status(201).json({
       message: "Public link generated successfully",
