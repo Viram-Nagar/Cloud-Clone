@@ -1142,6 +1142,48 @@ exports.getStarredItems = async (req, res) => {
   }
 };
 
+exports.getSharedWithMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(
+      `SELECT 
+        f.id, f.name, f.mime_type, f.size_bytes, f.updated_at,
+        s.role,
+        u.name as shared_by_name,
+        u.email as shared_by_email,
+        'file' as type
+       FROM shares s
+       JOIN files f ON s.file_id = f.id
+       JOIN users u ON s.created_by = u.id
+       WHERE s.grantee_id = $1
+       AND f.is_deleted = false
+
+       UNION ALL
+
+       SELECT 
+        fo.id, fo.name, 'folder' as mime_type, 0 as size_bytes, fo.updated_at,
+        s.role,
+        u.name as shared_by_name,
+        u.email as shared_by_email,
+        'folder' as type
+       FROM shares s
+       JOIN folders fo ON s.folder_id = fo.id
+       JOIN users u ON s.created_by = u.id
+       WHERE s.grantee_id = $1
+       AND fo.is_deleted = false
+
+       ORDER BY updated_at DESC`,
+      [userId],
+    );
+
+    res.status(200).json({ sharedItems: result.rows });
+  } catch (error) {
+    console.error("Shared With Me Error:", error);
+    res.status(500).json({ message: "Error fetching shared items" });
+  }
+};
+
 // const db = require("../db"); // Your high-performance PostgreSQL pool
 // const { v4: uuidv4 } = require("uuid"); // Install this: npm install uuid
 // const supabase = require("../config/supabaseClient");

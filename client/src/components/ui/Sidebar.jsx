@@ -7,6 +7,7 @@ import {
   Cloud,
   Settings,
   LogOut,
+  Users,
   X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -49,12 +50,12 @@ const Sidebar = ({ isMobile, onClose }) => {
         onClick={isMobile ? onClose : undefined}
       >
         <NavItem to="/dashboard" icon={HardDrive} label="My Drive" />
+
+        <NavItem to="/shared" icon={Users} label="Shared with me" />
         <NavItem to="/recent" icon={Clock} label="Recent" />
         <NavItem to="/starred" icon={Star} label="Starred" />
         <NavItem to="/trash" icon={Trash2} label="Trash" />
-
         <Divider className="my-6 opacity-50" />
-
         <NavItem to="/settings" icon={Settings} label="Settings" />
       </nav>
 

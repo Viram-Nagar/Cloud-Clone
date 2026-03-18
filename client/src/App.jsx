@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import SharedWithMe from "./pages/SharedWithMe";
 import PublicShare from "./pages/PublicShare";
 import MainLayout from "./layouts/MainLayout";
 import { useAuth } from "./context/AuthContext";
@@ -40,6 +41,7 @@ const App = () => {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/shared" element={<SharedWithMe />} />
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

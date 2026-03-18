@@ -8,6 +8,8 @@ const { checkPermission } = require("../middleware/permission");
 // --- List Operations ---
 
 // 1. Get all files (optionally filtered by folderId)
+router.get("/shared-with-me", protect, fileController.getSharedWithMe);
+
 router.get("/", protect, fileController.getFiles);
 
 // 2. Get all folders (optionally filtered by parentId)
