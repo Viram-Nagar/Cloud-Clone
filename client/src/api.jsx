@@ -1,5 +1,19 @@
 import axios from "axios";
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Create the custom instance
 const API = axios.create({
   baseURL: "https://cloud-clone.vercel.app/api",
@@ -15,15 +29,26 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// 2. Response Interceptor: Handle 401 and Refresh Token
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // ✅ Agar refresh chal raha hai toh queue mein daalo
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return API(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const res = await axios({
@@ -33,26 +58,17 @@ API.interceptors.response.use(
         });
 
         const { accessToken } = res.data;
-
-        // Update storage
         localStorage.setItem("token", accessToken);
-
-        // Update the failed request header and retry
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Use axios directly to retry
-        return axios(originalRequest);
+        processQueue(null, accessToken); // ✅ Queue resolve karo
+        return API(originalRequest);
       } catch (refreshError) {
-        // --- THE FIX IS HERE ---
-        console.error("Refresh token expired or invalid.");
-
-        // We only clear the token.
-        // We DO NOT use window.location.href = "/login" here.
-        // The ProtectedRoute in React will see that the user is null
-        // and redirect them gracefully.
+        processQueue(refreshError, null); // ✅ Queue reject karo
         localStorage.removeItem("token");
-
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false; // ✅ Reset karo
       }
     }
 
@@ -61,6 +77,51 @@ API.interceptors.response.use(
 );
 
 export default API;
+
+// 2. Response Interceptor: Handle 401 and Refresh Token
+// API.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     const originalRequest = error.config;
+
+//     // Check if error is 401 and we haven't retried yet
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+
+//       try {
+//         const res = await axios({
+//           method: "post",
+//           url: "https://cloud-clone.vercel.app/api/auth/refresh",
+//           withCredentials: true,
+//         });
+
+//         const { accessToken } = res.data;
+
+//         // Update storage
+//         localStorage.setItem("token", accessToken);
+
+//         // Update the failed request header and retry
+//         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+//         // Use axios directly to retry
+//         return axios(originalRequest);
+//       } catch (refreshError) {
+//         // --- THE FIX IS HERE ---
+//         console.error("Refresh token expired or invalid.");
+
+//         // We only clear the token.
+//         // We DO NOT use window.location.href = "/login" here.
+//         // The ProtectedRoute in React will see that the user is null
+//         // and redirect them gracefully.
+//         localStorage.removeItem("token");
+
+//         return Promise.reject(refreshError);
+//       }
+//     }
+
+//     return Promise.reject(error);
+//   },
+// );
 
 // import axios from "axios";
 
