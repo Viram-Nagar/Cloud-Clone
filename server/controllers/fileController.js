@@ -30,59 +30,84 @@ const upload = multer({
 }).single("file"); // Key name must be "file" in Postman
 
 // 1. Fetch all files for a user (optionally inside a folder)
+// server/controllers/fileController.js
+
+// 1. Fetch all files using raw SQL (db.js)
 exports.getFiles = async (req, res) => {
   try {
     const { folderId } = req.query;
-    const userId = req.user.id; // From 'protect' middleware
+    const userId = req.user.id;
 
-    let query = db
-      .from("files")
-      .select("*")
-      .eq("owner_id", userId)
-      .eq("is_trashed", false);
+    let queryText;
+    let queryParams;
 
-    // If folderId is provided, get files in that folder.
-    // If not, get files in the root (where folder_id is null).
     if (folderId && folderId !== "null") {
-      query = query.eq("folder_id", folderId);
+      // Fetch files within a specific folder
+      queryText = `
+        SELECT * FROM files 
+        WHERE owner_id = $1 
+        AND folder_id = $2 
+        AND is_trashed = false 
+        ORDER BY created_at DESC
+      `;
+      queryParams = [userId, folderId];
     } else {
-      query = query.is("folder_id", null);
+      // Fetch files in the root directory (folder_id is NULL)
+      queryText = `
+        SELECT * FROM files 
+        WHERE owner_id = $1 
+        AND folder_id IS NULL 
+        AND is_trashed = false 
+        ORDER BY created_at DESC
+      `;
+      queryParams = [userId];
     }
 
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
+    const result = await db.query(queryText, queryParams);
 
-    if (error) throw error;
-    res.status(200).json({ files: data });
+    res.status(200).json({ files: result.rows });
   } catch (err) {
+    console.error("Fetch Files Error:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
 
-// 2. Fetch all folders for a user (optionally inside a parent folder)
+// 2. Fetch all folders using raw SQL (db.js)
 exports.getFolders = async (req, res) => {
   try {
     const { parentId } = req.query;
     const userId = req.user.id;
 
-    let query = db
-      .from("folders")
-      .select("*")
-      .eq("owner_id", userId)
-      .eq("is_trashed", false);
+    let queryText;
+    let queryParams;
 
     if (parentId && parentId !== "null") {
-      query = query.eq("parent_id", parentId);
+      // Fetch sub-folders
+      queryText = `
+        SELECT * FROM folders 
+        WHERE owner_id = $1 
+        AND parent_id = $2 
+        AND is_trashed = false 
+        ORDER BY name ASC
+      `;
+      queryParams = [userId, parentId];
     } else {
-      query = query.is("parent_id", null);
+      // Fetch root folders
+      queryText = `
+        SELECT * FROM folders 
+        WHERE owner_id = $1 
+        AND parent_id IS NULL 
+        AND is_trashed = false 
+        ORDER BY name ASC
+      `;
+      queryParams = [userId];
     }
 
-    const { data, error } = await query.order("name", { ascending: true });
+    const result = await db.query(queryText, queryParams);
 
-    if (error) throw error;
-    res.status(200).json({ folders: data });
+    res.status(200).json({ folders: result.rows });
   } catch (err) {
+    console.error("Fetch Folders Error:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
