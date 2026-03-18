@@ -47,7 +47,7 @@ exports.getFiles = async (req, res) => {
         SELECT * FROM files 
         WHERE owner_id = $1 
         AND folder_id = $2 
-        AND is_trashed = false 
+        AND is_deleted = false 
         ORDER BY created_at DESC
       `;
       queryParams = [userId, folderId];
@@ -57,7 +57,7 @@ exports.getFiles = async (req, res) => {
         SELECT * FROM files 
         WHERE owner_id = $1 
         AND folder_id IS NULL 
-        AND is_trashed = false 
+        AND is_deleted = false 
         ORDER BY created_at DESC
       `;
       queryParams = [userId];
@@ -87,7 +87,7 @@ exports.getFolders = async (req, res) => {
         SELECT * FROM folders 
         WHERE owner_id = $1 
         AND parent_id = $2 
-        AND is_trashed = false 
+        AND is_deleted = false 
         ORDER BY name ASC
       `;
       queryParams = [userId, parentId];
@@ -97,7 +97,7 @@ exports.getFolders = async (req, res) => {
         SELECT * FROM folders 
         WHERE owner_id = $1 
         AND parent_id IS NULL 
-        AND is_trashed = false 
+        AND is_deleted = false 
         ORDER BY name ASC
       `;
       queryParams = [userId];
