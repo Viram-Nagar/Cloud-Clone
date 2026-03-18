@@ -5,7 +5,7 @@ import Card from "./Card";
 import FileIcon from "./FileIcon";
 import Button from "./Button";
 
-const FileCard = ({ file, onAction }) => {
+const FileCard = ({ file, onAction, onPreview }) => {
   return (
     <motion.div
       layout
@@ -13,12 +13,13 @@ const FileCard = ({ file, onAction }) => {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
+      onClick={() => onPreview?.(file)}
     >
-      <Card className="group p-3 cursor-pointer hover:shadow-xl transition-all border-border/60">
+      <Card className="group p-3 cursor-pointer hover:shadow-xl transition-all border-border/60 ">
         <div className="flex items-start justify-between mb-4">
           {/* File Icon based on MimeType */}
           <div className="p-3 bg-bg-main rounded-2xl group-hover:scale-110 transition-transform">
-            <FileIcon mimeType={file.mimeType} size={32} />
+            <FileIcon fileName={file.name} size={32} />
           </div>
 
           <Button
@@ -39,7 +40,9 @@ const FileCard = ({ file, onAction }) => {
           </h4>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-text-secondary uppercase font-semibold">
-              {(file.size / 1024).toFixed(1)} KB
+              {file.size_bytes
+                ? (file.size_bytes / 1024).toFixed(1) + " KB"
+                : "—"}
             </span>
             {file.isStarred && (
               <Star size={12} className="fill-yellow-400 text-yellow-400" />

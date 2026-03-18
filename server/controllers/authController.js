@@ -27,7 +27,7 @@ const generateTokens = async (userId, res) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
@@ -78,7 +78,11 @@ const login = async (req, res) => {
 
     res.json({
       message: "Logged in",
-      user: { id: user.rows[0].id, name: user.rows[0].name },
+      user: {
+        id: user.rows[0].id,
+        name: user.rows[0].name,
+        email: user.rows[0].email,
+      },
       accessToken, // Frontend keeps this in memory
     });
   } catch (err) {

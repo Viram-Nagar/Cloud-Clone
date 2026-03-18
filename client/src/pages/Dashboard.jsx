@@ -1,6 +1,7 @@
+import FilePreviewModal from "../components/ui/FilePreviewModal";
 import React, { useState, useEffect } from "react";
-import API from "../api";
-
+import API from "../api.jsx";
+import UploadZone from "../components/ui/UploadZone";
 // Reusable UI Components from your library
 import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
@@ -18,6 +19,8 @@ const Dashboard = () => {
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   // Navigation State
   const [currentFolderId, setCurrentFolderId] = useState(null);
@@ -64,15 +67,28 @@ const Dashboard = () => {
   // --- 3. NAVIGATION LOGIC ---
   const handleFolderClick = (id, name) => {
     setCurrentFolderId(id);
-    setPath([...path, { id, name }]);
+    setPath((prev) => [...prev, { id, name }]);
   };
 
+  // Inside Dashboard.jsx - Replace your old function with this:
   const handleBreadcrumbClick = (index) => {
+    // If they click the current folder, do nothing
+    if (index === path.length - 1) return;
+
+    // Create the new path up to the clicked index
     const newPath = path.slice(0, index + 1);
     const targetFolder = newPath[newPath.length - 1];
+
     setPath(newPath);
-    setCurrentFolderId(targetFolder.id);
+    setCurrentFolderId(targetFolder.id); // This will trigger the useEffect to fetch data
   };
+
+  // const handleBreadcrumbClick = (index) => {
+  //   const newPath = path.slice(0, index + 1);
+  //   const targetFolder = newPath[newPath.length - 1];
+  //   setPath(newPath);
+  //   setCurrentFolderId(targetFolder.id);
+  // };
 
   // --- 4. ACTION LOGIC (CREATE FOLDER) ---
   const handleCreateFolder = async (e) => {
@@ -81,7 +97,7 @@ const Dashboard = () => {
 
     setIsCreating(true);
     try {
-      await API.post("/folders", {
+      await API.post("/files/folders", {
         name: newFolderName,
         parentId: currentFolderId,
       });
@@ -120,9 +136,7 @@ const Dashboard = () => {
           <Button variant="ghost" size="sm" className="hidden sm:flex">
             <ListIcon size={18} />
           </Button>
-
           <div className="hidden sm:block w-px h-6 bg-border mx-2" />
-
           {/* TRIGGER MODAL */}
           <Button
             variant="secondary"
@@ -131,10 +145,10 @@ const Dashboard = () => {
           >
             <Plus size={18} /> New Folder
           </Button>
-
           <Button
             variant="primary"
             className="gap-2"
+            onClick={() => setIsUploadModalOpen(true)}
             loadingText="Uploading..."
           >
             <Upload size={18} /> Upload
@@ -192,16 +206,21 @@ const Dashboard = () => {
                       key={file.id}
                       file={file}
                       onAction={(f) => console.log("Menu for", f.name)}
+                      onPreview={(f) => setPreviewFile(f)}
                     />
                   ))}
                 </AnimatePresence>
               </motion.div>
             ) : (
-              folders.length === 0 && (
-                <div className="text-center py-24 bg-bg-main/40 rounded-4xl border-2 border-dashed border-border/60">
-                  <p className="text-text-secondary">This folder is empty.</p>
-                </div>
-              )
+              <div className="text-center py-12 text-text-secondary">
+                No files in this folder.
+              </div>
+            )}
+
+            {files.length === 0 && folders.length === 0 && (
+              <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">
+                <p className="text-text-secondary">This folder is empty.</p>
+              </div>
             )}
           </section>
         </div>
@@ -241,6 +260,25 @@ const Dashboard = () => {
           </div>
         </form>
       </Modal>
+      <Modal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        title="Upload Files"
+        maxWidth="max-w-lg"
+      >
+        <UploadZone
+          currentFolderId={currentFolderId}
+          onUploadComplete={() => {
+            fetchContent();
+            setIsUploadModalOpen(false);
+          }}
+        />
+      </Modal>
+      <FilePreviewModal
+        file={previewFile}
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+      />
     </div>
   );
 };

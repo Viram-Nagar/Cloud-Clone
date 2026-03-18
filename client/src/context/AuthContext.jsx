@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext } from "react";
-import API from "../api";
+import API from "../api.jsx";
 
 const AuthContext = createContext();
 
@@ -25,8 +25,8 @@ export const AuthProvider = ({ children }) => {
         // will automatically try to refresh it before this call finishes.
         const res = await API.get("/auth/me");
 
-        if (res.data && res.data.user) {
-          setUser(res.data.user);
+        if (res.data) {
+          setUser(res?.data);
         }
       } catch (err) {
         // If /auth/me fails AND the interceptor couldn't refresh the token,

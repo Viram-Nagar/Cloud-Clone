@@ -1,3 +1,5 @@
+const supabase = require("../config/supabaseClient");
+
 const db = require("../db");
 const crypto = require("crypto"); // For secure tokens
 const bcrypt = require("bcrypt"); // For link passwords

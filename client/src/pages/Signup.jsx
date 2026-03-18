@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import API from "../api";
+import API from "../api.jsx";
 // Importing your Reusable Components
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -90,7 +90,6 @@ const Signup = () => {
               type="submit"
               variant="primary"
               className="w-full py-4"
-              isLoading={loading}
               loadingText="Signing..."
             >
               Get Started Free

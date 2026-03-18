@@ -87,8 +87,6 @@ const Sidebar = ({ isMobile, onClose }) => {
           variant="ghost"
           onClick={logout}
           className="w-full justify-start gap-3 px-4 text-text-secondary hover:text-error hover:bg-red-50 group"
-          isLoading
-          loadingText="Processing..."
         >
           <LogOut
             size={18}
