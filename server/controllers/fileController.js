@@ -29,6 +29,64 @@ const upload = multer({
   },
 }).single("file"); // Key name must be "file" in Postman
 
+// 1. Fetch all files for a user (optionally inside a folder)
+exports.getFiles = async (req, res) => {
+  try {
+    const { folderId } = req.query;
+    const userId = req.user.id; // From 'protect' middleware
+
+    let query = db
+      .from("files")
+      .select("*")
+      .eq("owner_id", userId)
+      .eq("is_trashed", false);
+
+    // If folderId is provided, get files in that folder.
+    // If not, get files in the root (where folder_id is null).
+    if (folderId && folderId !== "null") {
+      query = query.eq("folder_id", folderId);
+    } else {
+      query = query.is("folder_id", null);
+    }
+
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
+
+    if (error) throw error;
+    res.status(200).json({ files: data });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 2. Fetch all folders for a user (optionally inside a parent folder)
+exports.getFolders = async (req, res) => {
+  try {
+    const { parentId } = req.query;
+    const userId = req.user.id;
+
+    let query = db
+      .from("folders")
+      .select("*")
+      .eq("owner_id", userId)
+      .eq("is_trashed", false);
+
+    if (parentId && parentId !== "null") {
+      query = query.eq("parent_id", parentId);
+    } else {
+      query = query.is("parent_id", null);
+    }
+
+    const { data, error } = await query.order("name", { ascending: true });
+
+    if (error) throw error;
+    res.status(200).json({ folders: data });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // --- 1. INITIALIZE UPLOAD ---
 exports.initializeUpload = async (req, res) => {
   try {

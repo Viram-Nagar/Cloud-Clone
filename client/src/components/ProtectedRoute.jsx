@@ -3,22 +3,22 @@ import { useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const token = localStorage.getItem("token");
 
-  // Show nothing (or a spinner) while we check if the user is logged in
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  // If no user is found, kick them to the login page
-  if (!user) {
+  // Guard: Double-check logic.
+  // If we have a user in state but no token, or vice versa, redirect to login.
+  if (!user || !token || token === "undefined") {
     return <Navigate to="/login" replace />;
   }
 
-  // If user exists, render the Dashboard
   return children;
 };
 

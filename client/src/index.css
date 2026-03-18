@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+@import "tailwindcss";
+
+@theme {
+  /* --- The VIP Color Palette --- */
+  --color-brand-blue: #3b82f6;
+  --color-brand-cyan: #06b6d4;
+  --color-brand-violet: #8b5cf6;
+
+  /* --- UI Foundation --- */
+  --color-bg-main: #fcfcfd;
+  --color-surface: #ffffff;
+  --color-border: #f1f5f9;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+
+  /* --- Typography --- */
+  --font-poppins: "Poppins", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+/* --- Creative Global Utilities --- */
+@layer components {
+  /* 1. Use this for Buttons or Landing Page Backgrounds */
+  .bg-brand-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--color-brand-blue),
+      var(--color-brand-cyan),
+      var(--color-brand-violet)
+    );
+  }
+
+  /* 2. Use this for beautiful Landing Page Headings (Text Gradient) */
+  .text-brand-gradient {
+    background: linear-gradient(
+      to right,
+      var(--color-brand-blue),
+      var(--color-brand-violet)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 3. Subtle Hover Effect for professional cards */
+  .hover-gradient-border {
+    @apply transition-all duration-300 border-2 border-transparent hover:border-brand-cyan;
+  }
+}

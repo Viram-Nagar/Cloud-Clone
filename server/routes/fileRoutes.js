@@ -5,6 +5,14 @@ const { protect } = require("../middleware/auth");
 // Import the new permission gatekeeper
 const { checkPermission } = require("../middleware/permission");
 
+// --- List Operations ---
+
+// 1. Get all files (optionally filtered by folderId)
+router.get("/", protect, fileController.getFiles);
+
+// 2. Get all folders (optionally filtered by parentId)
+router.get("/folders", protect, fileController.getFolders);
+
 // --- File Operations ---
 
 // Initialization and Upload (Owner only logic is usually inside controller,
