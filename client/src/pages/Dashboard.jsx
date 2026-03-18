@@ -4,6 +4,7 @@ import API from "../api.jsx";
 import UploadZone from "../components/ui/UploadZone";
 import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
+import ShareModal from "../components/ui/ShareModal";
 import Breadcrumbs from "../components/ui/Breadcrumbs";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
@@ -33,6 +34,9 @@ const Dashboard = () => {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState(null);
 
   // --- 2. DATA FETCHING ---
   const fetchContent = async () => {
@@ -120,7 +124,8 @@ const Dashboard = () => {
 
     if (action === "share") {
       // Day 11 — placeholder
-      console.log("Share coming in Day 11:", file);
+      setShareTarget({ id: file.id, name: file.name, type: "file" });
+      setIsShareModalOpen(true);
     }
   };
 
@@ -379,6 +384,15 @@ const Dashboard = () => {
         file={previewFile}
         isOpen={!!previewFile}
         onClose={() => setPreviewFile(null)}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setShareTarget(null);
+        }}
+        resource={shareTarget}
       />
     </div>
   );
