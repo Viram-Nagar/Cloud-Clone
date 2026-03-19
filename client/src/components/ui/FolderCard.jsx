@@ -1,90 +1,54 @@
 import React, { useState } from "react";
-import { Folder, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Folder, MoreVertical, Pencil, Trash2, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import Card from "./Card";
 import Button from "./Button";
 import ContextMenu from "./ContextMenu";
+import API from "../../api.jsx";
 
-const FolderCard = ({ folder, onNavigate, onAction }) => {
+const FolderCard = ({ folder, onNavigate, onAction, onStarToggle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isStarred, setIsStarred] = useState(folder.is_starred || false);
+  const [isStarring, setIsStarring] = useState(false);
+
+  // --- Star toggle handler ---
+  const handleStarToggle = async (e) => {
+    e.stopPropagation(); // prevent folder navigation
+    if (isStarring) return;
+    setIsStarring(true);
+
+    // Optimistic update
+    setIsStarred((prev) => !prev);
+
+    try {
+      await API.post("/files/stars/toggle", {
+        folderId: folder.id,
+      });
+      onStarToggle?.();
+    } catch (err) {
+      // Revert on error
+      setIsStarred((prev) => !prev);
+      console.error("Star toggle failed:", err);
+    } finally {
+      setIsStarring(false);
+    }
+  };
 
   const menuItems = [
     {
       label: "Rename",
       icon: Pencil,
-      onClick: () => onAction(folder, "rename"),
+      onClick: () => onAction?.(folder, "rename"),
     },
     {
       label: "Delete",
       icon: Trash2,
-      onClick: () => onAction(folder, "delete"),
+      onClick: () => onAction?.(folder, "delete"),
       variant: "danger",
     },
   ];
 
   return (
-    // <motion.div
-    //   layout
-    //   initial={{ opacity: 0, scale: 0.9 }}
-    //   animate={{ opacity: 1, scale: 1 }}
-    //   whileHover={{ y: -4 }}
-    //   whileTap={{ scale: 0.98 }}
-    //   transition={{ duration: 0.2 }}
-    //   className="cursor-pointer"
-    //   onClick={() => onNavigate(folder.id, folder.name)}
-    // >
-    //   <Card
-    //     className={`group p-4 hover:shadow-xl transition-all border-border/60 hover:border-brand-blue/30 bg-surface relative ${isMenuOpen ? "z-20" : "z-0"}`}
-    //   >
-    //     <div className="flex items-center justify-between">
-    //       {/* Folder Icon & Name */}
-    //       <div className="flex items-center gap-3 overflow-hidden">
-    //         <div className="p-2.5 bg-brand-blue/10 rounded-xl group-hover:bg-brand-blue/20 transition-colors">
-    //           <Folder
-    //             size={24}
-    //             className="text-brand-blue fill-brand-blue/20"
-    //           />
-    //         </div>
-    //         <h4
-    //           className="text-sm font-bold text-text-primary truncate"
-    //           title={folder.name}
-    //         >
-    //           {folder.name}
-    //         </h4>
-    //       </div>
-
-    //       {/* MoreVertical trigger */}
-    //       <div className="relative">
-    //         <Button
-    //           variant="ghost"
-    //           size="sm"
-    //           className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-    //           onClick={(e) => {
-    //             e.stopPropagation(); // prevent folder navigation
-    //             setIsMenuOpen((prev) => !prev);
-    //           }}
-    //         >
-    //           <MoreVertical size={16} />
-    //         </Button>
-
-    //         <ContextMenu
-    //           isOpen={isMenuOpen}
-    //           onClose={() => setIsMenuOpen(false)}
-    //           items={menuItems}
-    //         />
-    //       </div>
-    //     </div>
-
-    //     {folder.itemCount !== undefined && (
-    //       <div className="mt-3 pt-3 border-t border-border/40">
-    //         <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider">
-    //           {folder.itemCount} Items
-    //         </span>
-    //       </div>
-    //     )}
-    //   </Card>
-    // </motion.div>
-
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
@@ -92,13 +56,14 @@ const FolderCard = ({ folder, onNavigate, onAction }) => {
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className="cursor-pointer relative" // relative moved HERE
+      className="cursor-pointer relative"
       onClick={() => onNavigate?.(folder.id, folder.name)}
     >
       <Card
         className={`group p-4 hover:shadow-xl transition-all border-border/60 hover:border-brand-blue/30 bg-surface ${isMenuOpen ? "z-20" : ""}`}
       >
         <div className="flex items-center justify-between">
+          {/* Folder Icon & Name */}
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="p-2.5 bg-brand-blue/10 rounded-xl group-hover:bg-brand-blue/20 transition-colors">
               <Folder
@@ -114,17 +79,46 @@ const FolderCard = ({ folder, onNavigate, onAction }) => {
             </h4>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMenuOpen((prev) => !prev);
-            }}
-          >
-            <MoreVertical size={16} />
-          </Button>
+          {/* Right side: Star + MoreVertical */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* STAR BUTTON */}
+            <button
+              onClick={handleStarToggle}
+              disabled={isStarring}
+              className="p-1.5 rounded-lg hover:bg-yellow-50 transition-colors opacity-0 group-hover:opacity-100"
+              title={isStarred ? "Remove from starred" : "Add to starred"}
+            >
+              <Star
+                size={13}
+                className={`transition-colors ${
+                  isStarred
+                    ? "fill-yellow-400 text-yellow-400 !opacity-100"
+                    : "text-text-secondary/40 hover:text-yellow-400"
+                }`}
+              />
+            </button>
+
+            {/* MoreVertical trigger */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen((prev) => !prev);
+                }}
+              >
+                <MoreVertical size={16} />
+              </Button>
+
+              <ContextMenu
+                isOpen={isMenuOpen}
+                onClose={() => setIsMenuOpen(false)}
+                items={menuItems}
+              />
+            </div>
+          </div>
         </div>
 
         {folder.itemCount !== undefined && (
@@ -135,18 +129,161 @@ const FolderCard = ({ folder, onNavigate, onAction }) => {
           </div>
         )}
       </Card>
-
-      {/* ContextMenu is NOW outside Card, inside motion.div */}
-      <ContextMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        items={menuItems}
-      />
     </motion.div>
   );
 };
 
 export default FolderCard;
+
+// import React, { useState } from "react";
+// import { Folder, MoreVertical, Pencil, Trash2 } from "lucide-react";
+// import { motion } from "framer-motion";
+// import Card from "./Card";
+// import Button from "./Button";
+// import ContextMenu from "./ContextMenu";
+
+// const FolderCard = ({ folder, onNavigate, onAction }) => {
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+//   const menuItems = [
+//     {
+//       label: "Rename",
+//       icon: Pencil,
+//       onClick: () => onAction(folder, "rename"),
+//     },
+//     {
+//       label: "Delete",
+//       icon: Trash2,
+//       onClick: () => onAction(folder, "delete"),
+//       variant: "danger",
+//     },
+//   ];
+
+//   return (
+//     // <motion.div
+//     //   layout
+//     //   initial={{ opacity: 0, scale: 0.9 }}
+//     //   animate={{ opacity: 1, scale: 1 }}
+//     //   whileHover={{ y: -4 }}
+//     //   whileTap={{ scale: 0.98 }}
+//     //   transition={{ duration: 0.2 }}
+//     //   className="cursor-pointer"
+//     //   onClick={() => onNavigate(folder.id, folder.name)}
+//     // >
+//     //   <Card
+//     //     className={`group p-4 hover:shadow-xl transition-all border-border/60 hover:border-brand-blue/30 bg-surface relative ${isMenuOpen ? "z-20" : "z-0"}`}
+//     //   >
+//     //     <div className="flex items-center justify-between">
+//     //       {/* Folder Icon & Name */}
+//     //       <div className="flex items-center gap-3 overflow-hidden">
+//     //         <div className="p-2.5 bg-brand-blue/10 rounded-xl group-hover:bg-brand-blue/20 transition-colors">
+//     //           <Folder
+//     //             size={24}
+//     //             className="text-brand-blue fill-brand-blue/20"
+//     //           />
+//     //         </div>
+//     //         <h4
+//     //           className="text-sm font-bold text-text-primary truncate"
+//     //           title={folder.name}
+//     //         >
+//     //           {folder.name}
+//     //         </h4>
+//     //       </div>
+
+//     //       {/* MoreVertical trigger */}
+//     //       <div className="relative">
+//     //         <Button
+//     //           variant="ghost"
+//     //           size="sm"
+//     //           className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+//     //           onClick={(e) => {
+//     //             e.stopPropagation(); // prevent folder navigation
+//     //             setIsMenuOpen((prev) => !prev);
+//     //           }}
+//     //         >
+//     //           <MoreVertical size={16} />
+//     //         </Button>
+
+//     //         <ContextMenu
+//     //           isOpen={isMenuOpen}
+//     //           onClose={() => setIsMenuOpen(false)}
+//     //           items={menuItems}
+//     //         />
+//     //       </div>
+//     //     </div>
+
+//     //     {folder.itemCount !== undefined && (
+//     //       <div className="mt-3 pt-3 border-t border-border/40">
+//     //         <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider">
+//     //           {folder.itemCount} Items
+//     //         </span>
+//     //       </div>
+//     //     )}
+//     //   </Card>
+//     // </motion.div>
+
+//     <motion.div
+//       layout
+//       initial={{ opacity: 0, scale: 0.9 }}
+//       animate={{ opacity: 1, scale: 1 }}
+//       whileHover={{ y: -4 }}
+//       whileTap={{ scale: 0.98 }}
+//       transition={{ duration: 0.2 }}
+//       className="cursor-pointer relative" // relative moved HERE
+//       onClick={() => onNavigate?.(folder.id, folder.name)}
+//     >
+//       <Card
+//         className={`group p-4 hover:shadow-xl transition-all border-border/60 hover:border-brand-blue/30 bg-surface ${isMenuOpen ? "z-20" : ""}`}
+//       >
+//         <div className="flex items-center justify-between">
+//           <div className="flex items-center gap-3 overflow-hidden">
+//             <div className="p-2.5 bg-brand-blue/10 rounded-xl group-hover:bg-brand-blue/20 transition-colors">
+//               <Folder
+//                 size={24}
+//                 className="text-brand-blue fill-brand-blue/20"
+//               />
+//             </div>
+//             <h4
+//               className="text-sm font-bold text-text-primary truncate"
+//               title={folder.name}
+//             >
+//               {folder.name}
+//             </h4>
+//           </div>
+
+//           <Button
+//             variant="ghost"
+//             size="sm"
+//             className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+//             onClick={(e) => {
+//               e.stopPropagation();
+//               setIsMenuOpen((prev) => !prev);
+//             }}
+//           >
+//             <MoreVertical size={16} />
+//           </Button>
+//         </div>
+
+//         {folder.itemCount !== undefined && (
+//           <div className="mt-3 pt-3 border-t border-border/40">
+//             <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider">
+//               {folder.itemCount} Items
+//             </span>
+//           </div>
+//         )}
+//       </Card>
+
+//       {/* ContextMenu is NOW outside Card, inside motion.div */}
+//       <ContextMenu
+//         isOpen={isMenuOpen}
+//         onClose={() => setIsMenuOpen(false)}
+//         items={menuItems}
+//       />
+//     </motion.div>
+//   );
+// };
+
+// export default FolderCard;
 
 // import React from "react";
 // import { Folder, MoreVertical } from "lucide-react";

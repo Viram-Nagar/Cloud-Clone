@@ -6,7 +6,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-
+import Recent from "./pages/Recent";
+import Starred from "./pages/Starred";
+import Trash from "./pages/Trash";
 import Search from "./pages/Search";
 import SharedWithMe from "./pages/SharedWithMe";
 import PublicShare from "./pages/PublicShare";
@@ -44,6 +46,9 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/shared" element={<SharedWithMe />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/recent" element={<Recent />} />
+          <Route path="/starred" element={<Starred />} />
+          <Route path="/trash" element={<Trash />} />
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

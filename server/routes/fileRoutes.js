@@ -46,6 +46,12 @@ router.delete(
   fileController.deleteFolder,
 );
 
+router.delete(
+  "/folders/:id/permanent",
+  protect,
+  fileController.permanentDeleteFolder,
+);
+
 // Generic /:id routes
 router.get(
   "/:id/versions",

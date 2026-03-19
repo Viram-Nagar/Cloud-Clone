@@ -659,6 +659,29 @@ exports.deleteFolder = async (req, res) => {
   }
 };
 
+exports.permanentDeleteFolder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const result = await db.query(
+      "DELETE FROM folders WHERE id = $1 AND owner_id = $2 RETURNING name",
+      [id, userId],
+    );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Folder not found or unauthorized" });
+    }
+
+    res.status(200).json({ message: "Folder permanently deleted" });
+  } catch (error) {
+    console.error("Permanent Delete Folder Error:", error);
+    res.status(500).json({ message: "Failed to permanently delete folder" });
+  }
+};
+
 // --- 7. RENAME FILE ---
 exports.renameFile = async (req, res) => {
   try {
@@ -1003,18 +1026,21 @@ exports.getStorageStats = async (req, res) => {
 exports.getActivity = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { limit = 50 } = req.query; // default 50, frontend can pass more
+
     const query = `
       SELECT a.id, a.action, a.created_at, 
              COALESCE(f.name, 'Deleted File') as file_name, 
-             COALESCE(fo.name, 'Deleted Folder') as folder_name
+             COALESCE(fo.name, 'Deleted Folder') as folder_name,
+             a.file_id, a.folder_id
       FROM activities a
       LEFT JOIN files f ON a.file_id = f.id
       LEFT JOIN folders fo ON a.folder_id = fo.id
       WHERE a.user_id = $1
       ORDER BY a.created_at DESC
-      LIMIT 20
+      LIMIT $2
     `;
-    const result = await db.query(query, [userId]);
+    const result = await db.query(query, [userId, parseInt(limit)]);
     res.status(200).json({ activities: result.rows });
   } catch (error) {
     res.status(500).json({ error: error.message });
