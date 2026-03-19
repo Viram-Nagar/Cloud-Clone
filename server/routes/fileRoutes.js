@@ -46,7 +46,14 @@ router.delete(
   fileController.deleteFolder,
 );
 
-// Generic /:id routes BAAD MEIN
+// Generic /:id routes
+router.get(
+  "/:id/versions",
+  protect,
+  checkPermission("viewer"),
+  fileController.getVersions,
+);
+
 router.get(
   "/:id/download",
   protect,

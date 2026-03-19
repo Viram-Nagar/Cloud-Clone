@@ -1184,6 +1184,36 @@ exports.getSharedWithMe = async (req, res) => {
   }
 };
 
+exports.getVersions = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Security: verify ownership first
+    const ownerCheck = await db.query(
+      "SELECT id FROM files WHERE id = $1 AND owner_id = $2",
+      [id, userId],
+    );
+
+    if (ownerCheck.rows.length === 0) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const result = await db.query(
+      `SELECT id, version_number, size_bytes, created_at
+       FROM file_versions
+       WHERE file_id = $1
+       ORDER BY version_number DESC`,
+      [id],
+    );
+
+    res.status(200).json({ versions: result.rows });
+  } catch (error) {
+    console.error("Get Versions Error:", error);
+    res.status(500).json({ message: "Error fetching versions" });
+  }
+};
+
 // const db = require("../db"); // Your high-performance PostgreSQL pool
 // const { v4: uuidv4 } = require("uuid"); // Install this: npm install uuid
 // const supabase = require("../config/supabaseClient");

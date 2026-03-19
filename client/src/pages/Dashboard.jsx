@@ -38,6 +38,9 @@ const Dashboard = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareTarget, setShareTarget] = useState(null);
 
+  const [sortBy, setSortBy] = useState("name"); // 'name' | 'size' | 'date'
+  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' | 'desc'
+
   // --- 2. DATA FETCHING ---
   const fetchContent = async () => {
     setLoading(true);
@@ -173,6 +176,30 @@ const Dashboard = () => {
     }
   };
 
+  const getSortedItems = (items) => {
+    return [...items].sort((a, b) => {
+      let comparison = 0;
+
+      if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      }
+
+      if (sortBy === "size") {
+        comparison = (a.size_bytes || 0) - (b.size_bytes || 0);
+      }
+
+      if (sortBy === "date") {
+        comparison = new Date(a.updated_at) - new Date(b.updated_at);
+      }
+
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  };
+
+  // Sorted versions of files and folders
+  const sortedFiles = getSortedItems(files);
+  const sortedFolders = getSortedItems(folders);
+
   return (
     <div className="space-y-6">
       {/* A. BREADCRUMBS */}
@@ -191,12 +218,43 @@ const Dashboard = () => {
           {path[path.length - 1].name}
         </h2>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:flex">
-            <Grid size={18} />
-          </Button>
-          <Button variant="ghost" size="sm" className="hidden sm:flex">
-            <ListIcon size={18} />
-          </Button>
+          {/* SORT BUTTONS */}
+          <div className="flex items-center gap-1 bg-bg-main border border-border rounded-xl p-1 overflow-x-auto">
+            {[
+              { key: "name", label: "Name" },
+              { key: "size", label: "Size" },
+              { key: "date", label: "Date" },
+            ].map((option) => (
+              <button
+                key={option.key}
+                onClick={() => {
+                  if (sortBy === option.key) {
+                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+                  } else {
+                    setSortBy(option.key);
+                    setSortOrder("asc");
+                  }
+                }}
+                className={`
+        px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150
+        flex items-center gap-1 shrink-0
+        ${
+          sortBy === option.key
+            ? "bg-surface text-text-primary shadow-sm border border-border"
+            : "text-text-secondary hover:text-text-primary"
+        }
+      `}
+              >
+                {option.label}
+                {sortBy === option.key && (
+                  <span className="text-brand-blue">
+                    {sortOrder === "asc" ? "↑" : "↓"}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="hidden sm:block w-px h-6 bg-border mx-2" />
           <div className="hidden sm:block w-px h-6 bg-border mx-2" />
           <Button
             variant="secondary"
@@ -236,7 +294,7 @@ const Dashboard = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
               >
                 <AnimatePresence mode="popLayout">
-                  {folders.map((folder) => (
+                  {sortedFolders.map((folder) => (
                     <FolderCard
                       key={folder.id}
                       folder={folder}
@@ -260,7 +318,7 @@ const Dashboard = () => {
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
               >
                 <AnimatePresence mode="popLayout">
-                  {files.map((file) => (
+                  {sortedFiles.map((file) => (
                     <FileCard
                       key={file.id}
                       file={file}

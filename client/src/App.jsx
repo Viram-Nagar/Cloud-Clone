@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import Search from "./pages/Search";
 import SharedWithMe from "./pages/SharedWithMe";
 import PublicShare from "./pages/PublicShare";
 import MainLayout from "./layouts/MainLayout";
@@ -42,6 +43,7 @@ const App = () => {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/shared" element={<SharedWithMe />} />
+          <Route path="/search" element={<Search />} />
         </Route>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
