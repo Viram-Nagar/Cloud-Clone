@@ -6,6 +6,7 @@ import API from "../api.jsx";
 import FileCard from "../components/ui/FileCard";
 import FilePreviewModal from "../components/ui/FilePreviewModal";
 import ShareModal from "../components/ui/ShareModal";
+import VersionModal from "../components/ui/VersionModal";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,8 @@ const SearchPage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
 
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [versionTarget, setVersionTarget] = useState(null);
   // --- 1. Fetch results when URL query changes ---
   useEffect(() => {
     if (!query.trim()) {
@@ -81,6 +84,12 @@ const SearchPage = () => {
     if (action === "rename") {
       // Refresh results after rename
       fetchResults(query);
+    }
+
+    // Add to handleFileAction in SearchPage.jsx and Starred.jsx
+    if (action === "versions") {
+      setVersionTarget(file);
+      setIsVersionModalOpen(true);
     }
   };
 
@@ -220,6 +229,14 @@ const SearchPage = () => {
           setShareTarget(null);
         }}
         resource={shareTarget}
+      />
+      <VersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => {
+          setIsVersionModalOpen(false);
+          setVersionTarget(null);
+        }}
+        file={versionTarget}
       />
     </div>
   );

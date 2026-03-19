@@ -148,7 +148,6 @@ exports.initializeUpload = async (req, res) => {
 // --- 2. EXECUTE UPLOAD ---
 
 exports.uploadFile = async (req, res) => {
-  // 1. Trigger Multer to handle the file buffer
   upload(req, res, async (err) => {
     if (err) return res.status(400).json({ message: err.message });
     if (!req.file) return res.status(400).json({ message: "No file provided" });
@@ -157,7 +156,6 @@ exports.uploadFile = async (req, res) => {
     const userId = req.user.id;
 
     try {
-      // 2. Get current file details and check ownership
       const currentFile = await db.query(
         "SELECT storage_key, size_bytes, version_number FROM files WHERE id = $1 AND owner_id = $2",
         [fileId, userId],
@@ -171,8 +169,7 @@ exports.uploadFile = async (req, res) => {
 
       const { storage_key, size_bytes, version_number } = currentFile.rows[0];
 
-      // 3. ARCHIVE THE OLD VERSION (The Snapshot)
-      // We only save a version if the file actually had data (size > 0)
+      // 1. ARCHIVE OLD VERSION FIRST (before touching storage)
       if (size_bytes > 0) {
         await db.query(
           "INSERT INTO file_versions (file_id, storage_key, size_bytes, version_number) VALUES ($1, $2, $3, $4)",
@@ -180,24 +177,27 @@ exports.uploadFile = async (req, res) => {
         );
       }
 
-      // 4. UPLOAD NEW FILE TO SUPABASE
+      // 2. GENERATE NEW STORAGE KEY for new version
+      // This prevents overwriting — old file stays safe in storage
+      const newStorageKey = `tenants/${userId}/files/${uuidv4()}-v${version_number + 1}-${req.file.originalname}`;
+
+      // 3. UPLOAD NEW FILE to new storage key
       const { error } = await supabase.storage
         .from(process.env.SUPABASE_BUCKET)
-        .upload(storage_key, req.file.buffer, {
+        .upload(newStorageKey, req.file.buffer, {
           contentType: req.file.mimetype,
-          upsert: true, // Overwrites the physical file at that key
+          upsert: false, // Never overwrite
         });
 
       if (error) throw error;
 
-      // 5. UPDATE MAIN FILE RECORD
-      // Increment the version number and update the size
+      // 4. UPDATE DB with new storage key + increment version
       await db.query(
-        "UPDATE files SET status = 'available', size_bytes = $1, version_number = version_number + 1, updated_at = NOW() WHERE id = $2",
-        [req.file.size, fileId],
+        "UPDATE files SET status = 'available', size_bytes = $1, version_number = version_number + 1, storage_key = $2, updated_at = NOW() WHERE id = $3",
+        [req.file.size, newStorageKey, fileId],
       );
 
-      // 6. LOG ACTIVITY
+      // 5. LOG ACTIVITY
       await db.query(
         "INSERT INTO activities (user_id, file_id, action) VALUES ($1, $2, $3)",
         [userId, fileId, "updated_version"],
@@ -213,6 +213,73 @@ exports.uploadFile = async (req, res) => {
     }
   });
 };
+
+// exports.uploadFile = async (req, res) => {
+//   // 1. Trigger Multer to handle the file buffer
+//   upload(req, res, async (err) => {
+//     if (err) return res.status(400).json({ message: err.message });
+//     if (!req.file) return res.status(400).json({ message: "No file provided" });
+
+//     const { fileId } = req.params;
+//     const userId = req.user.id;
+
+//     try {
+//       // 2. Get current file details and check ownership
+//       const currentFile = await db.query(
+//         "SELECT storage_key, size_bytes, version_number FROM files WHERE id = $1 AND owner_id = $2",
+//         [fileId, userId],
+//       );
+
+//       if (currentFile.rows.length === 0) {
+//         return res
+//           .status(404)
+//           .json({ message: "File not found or access denied" });
+//       }
+
+//       const { storage_key, size_bytes, version_number } = currentFile.rows[0];
+
+//       // 3. ARCHIVE THE OLD VERSION (The Snapshot)
+//       // We only save a version if the file actually had data (size > 0)
+//       if (size_bytes > 0) {
+//         await db.query(
+//           "INSERT INTO file_versions (file_id, storage_key, size_bytes, version_number) VALUES ($1, $2, $3, $4)",
+//           [fileId, storage_key, size_bytes, version_number],
+//         );
+//       }
+
+//       // 4. UPLOAD NEW FILE TO SUPABASE
+//       const { error } = await supabase.storage
+//         .from(process.env.SUPABASE_BUCKET)
+//         .upload(storage_key, req.file.buffer, {
+//           contentType: req.file.mimetype,
+//           upsert: true, // Overwrites the physical file at that key
+//         });
+
+//       if (error) throw error;
+
+//       // 5. UPDATE MAIN FILE RECORD
+//       // Increment the version number and update the size
+//       await db.query(
+//         "UPDATE files SET status = 'available', size_bytes = $1, version_number = version_number + 1, updated_at = NOW() WHERE id = $2",
+//         [req.file.size, fileId],
+//       );
+
+//       // 6. LOG ACTIVITY
+//       await db.query(
+//         "INSERT INTO activities (user_id, file_id, action) VALUES ($1, $2, $3)",
+//         [userId, fileId, "updated_version"],
+//       );
+
+//       res.status(200).json({
+//         message: "File updated successfully",
+//         newVersion: version_number + 1,
+//       });
+//     } catch (error) {
+//       console.error("Upload Error:", error);
+//       res.status(500).json({ error: error.message });
+//     }
+//   });
+// };
 
 // exports.uploadFile = async (req, res) => {
 //   upload(req, res, async (err) => {
@@ -910,7 +977,6 @@ exports.permanentDelete = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // 1. Verify ownership and get the storage_key
     const fileCheck = await db.query(
       "SELECT storage_key, name FROM files WHERE id = $1 AND owner_id = $2",
       [id, userId],
@@ -924,17 +990,24 @@ exports.permanentDelete = async (req, res) => {
 
     const { storage_key, name } = fileCheck.rows[0];
 
-    // 2. Delete from Supabase Storage
+    // Get all version storage keys too
+    const versions = await db.query(
+      "SELECT storage_key FROM file_versions WHERE file_id = $1",
+      [id],
+    );
+
+    // Delete ALL storage keys (current + all versions)
+    const allKeys = [storage_key, ...versions.rows.map((v) => v.storage_key)];
+
     const { error: storageError } = await supabase.storage
       .from(process.env.SUPABASE_BUCKET)
-      .remove([storage_key]);
+      .remove(allKeys);
 
     if (storageError) throw storageError;
 
-    // 3. Delete from Database (Cascading will handle versions and shares)
+    // Delete from DB (cascade handles versions)
     await db.query("DELETE FROM files WHERE id = $1", [id]);
 
-    // 4. Log the permanent deletion
     await db.query(
       "INSERT INTO activities (user_id, action, details) VALUES ($1, $2, $3)",
       [userId, "permanent_delete", `Permanently deleted ${name}`],
@@ -948,6 +1021,50 @@ exports.permanentDelete = async (req, res) => {
     res.status(500).json({ message: "Failed to permanently delete file" });
   }
 };
+
+// exports.permanentDelete = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const userId = req.user.id;
+
+//     // 1. Verify ownership and get the storage_key
+//     const fileCheck = await db.query(
+//       "SELECT storage_key, name FROM files WHERE id = $1 AND owner_id = $2",
+//       [id, userId],
+//     );
+
+//     if (fileCheck.rows.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "File not found or unauthorized" });
+//     }
+
+//     const { storage_key, name } = fileCheck.rows[0];
+
+//     // 2. Delete from Supabase Storage
+//     const { error: storageError } = await supabase.storage
+//       .from(process.env.SUPABASE_BUCKET)
+//       .remove([storage_key]);
+
+//     if (storageError) throw storageError;
+
+//     // 3. Delete from Database (Cascading will handle versions and shares)
+//     await db.query("DELETE FROM files WHERE id = $1", [id]);
+
+//     // 4. Log the permanent deletion
+//     await db.query(
+//       "INSERT INTO activities (user_id, action, details) VALUES ($1, $2, $3)",
+//       [userId, "permanent_delete", `Permanently deleted ${name}`],
+//     );
+
+//     res
+//       .status(200)
+//       .json({ message: "File permanently deleted and storage freed" });
+//   } catch (error) {
+//     console.error("Hard Delete Error:", error);
+//     res.status(500).json({ message: "Failed to permanently delete file" });
+//   }
+// };
 
 // 1. Get all soft-deleted items
 exports.getTrash = async (req, res) => {

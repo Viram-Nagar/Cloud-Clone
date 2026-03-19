@@ -6,6 +6,8 @@ import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
 import ShareModal from "../components/ui/ShareModal";
 import Breadcrumbs from "../components/ui/Breadcrumbs";
+import VersionModal from "../components/ui/VersionModal";
+
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
@@ -40,6 +42,9 @@ const Dashboard = () => {
 
   const [sortBy, setSortBy] = useState("name"); // 'name' | 'size' | 'date'
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc' | 'desc'
+
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [versionTarget, setVersionTarget] = useState(null);
 
   // --- 2. DATA FETCHING ---
   const fetchContent = async () => {
@@ -129,6 +134,10 @@ const Dashboard = () => {
       // Day 11 — placeholder
       setShareTarget({ id: file.id, name: file.name, type: "file" });
       setIsShareModalOpen(true);
+    }
+    if (action === "versions") {
+      setVersionTarget(file);
+      setIsVersionModalOpen(true);
     }
   };
 
@@ -451,6 +460,15 @@ const Dashboard = () => {
           setShareTarget(null);
         }}
         resource={shareTarget}
+      />
+
+      <VersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => {
+          setIsVersionModalOpen(false);
+          setVersionTarget(null);
+        }}
+        file={versionTarget}
       />
     </div>
   );

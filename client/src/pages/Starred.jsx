@@ -6,6 +6,7 @@ import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
 import FilePreviewModal from "../components/ui/FilePreviewModal";
 import ShareModal from "../components/ui/ShareModal";
+import VersionModal from "../components/ui/VersionModal";
 
 const Starred = () => {
   const [starredItems, setStarredItems] = useState([]);
@@ -13,7 +14,8 @@ const Starred = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [versionTarget, setVersionTarget] = useState(null);
   useEffect(() => {
     fetchStarredItems();
   }, []);
@@ -71,6 +73,12 @@ const Starred = () => {
 
     if (action === "rename") {
       fetchStarredItems();
+    }
+
+    // Add to handleFileAction in SearchPage.jsx and Starred.jsx
+    if (action === "versions") {
+      setVersionTarget(file);
+      setIsVersionModalOpen(true);
     }
   };
 
@@ -228,6 +236,15 @@ const Starred = () => {
           setShareTarget(null);
         }}
         resource={shareTarget}
+      />
+
+      <VersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => {
+          setIsVersionModalOpen(false);
+          setVersionTarget(null);
+        }}
+        file={versionTarget}
       />
     </div>
   );

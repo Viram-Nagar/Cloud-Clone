@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   MoreVertical,
   Star,
@@ -6,6 +6,8 @@ import {
   Pencil,
   Trash2,
   Share2,
+  History,
+  RefreshCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Card from "./Card";
@@ -15,6 +17,8 @@ import ContextMenu from "./ContextMenu";
 import API from "../../api.jsx";
 
 const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isStarred, setIsStarred] = useState(file.is_starred || false);
   const [isStarring, setIsStarring] = useState(false);
@@ -42,11 +46,44 @@ const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
     }
   };
 
+  const handleReupload = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      await API.post(`/files/upload/${file.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      onAction?.(file, "reupload_done");
+    } catch (err) {
+      console.error("Re-upload failed:", err);
+    } finally {
+      setIsUploading(false);
+      // Reset input so same file can be selected again
+      e.target.value = "";
+    }
+  };
+
   const menuItems = [
     {
       label: "Download",
       icon: Download,
       onClick: () => onAction?.(file, "download"),
+    },
+    {
+      label: "Update File",
+      icon: RefreshCw,
+      onClick: () => fileInputRef.current?.click(),
+    },
+    {
+      label: "Version History",
+      icon: History,
+      onClick: () => onAction?.(file, "versions"),
     },
     {
       label: "Rename",
@@ -76,9 +113,23 @@ const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
       className="relative"
       onClick={() => onPreview?.(file)}
     >
+      {/* Hidden file input for re-upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleReupload}
+      />
+
       <Card
-        className={`group p-3 cursor-pointer hover:shadow-xl transition-all border-border/60 ${isMenuOpen ? "z-20" : ""}`}
+        className={`group p-3 cursor-pointer hover:shadow-xl transition-all border-border/60 ${isMenuOpen ? "z-20" : ""} ${isUploading ? "opacity-60" : ""}`}
       >
+        {/* uploading indicator */}
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-surface/80 rounded-3xl z-10">
+            <div className="animate-spin h-6 w-6 border-4 border-brand-blue border-t-transparent rounded-full" />
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           {/* File Icon */}
           <div className="p-3 bg-bg-main rounded-2xl group-hover:scale-110 transition-transform">
