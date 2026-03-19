@@ -133,11 +133,22 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
           <div className="flex items-center gap-2 shrink-0">
             {/* Download Button */}
             {downloadUrl && (
-              <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary" size="sm" className="gap-2">
-                  <Download size={14} /> Download
-                </Button>
-              </a>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = downloadUrl;
+                  link.download = file.name;
+                  link.target = "_blank";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <Download size={14} /> Download
+              </Button>
             )}
             {/* Close Button */}
             <Button variant="ghost" size="sm" onClick={onClose}>

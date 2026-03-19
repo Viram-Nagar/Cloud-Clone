@@ -78,7 +78,10 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
 
     // 3. Refresh dashboard
     const allDone = newItems.every((item) => item.status !== "error");
-    if (allDone) onUploadComplete?.();
+    if (allDone) {
+      onUploadComplete?.();
+      window.dispatchEvent(new Event("storage-updated"));
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

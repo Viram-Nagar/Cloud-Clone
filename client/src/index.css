@@ -19,6 +19,8 @@
   /* --- Typography --- */
   --font-poppins: "Poppins", sans-serif;
   --font-inter: "Inter", sans-serif;
+
+  --breakpoint-xs: 500px;
 }
 
 /* --- Creative Global Utilities --- */

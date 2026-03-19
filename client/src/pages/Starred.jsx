@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../api.jsx";
+import downloadFile from "../util/DownloadFile.jsx";
 import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
 import FilePreviewModal from "../components/ui/FilePreviewModal";
@@ -49,12 +50,7 @@ const Starred = () => {
   // --- File actions ---
   const handleFileAction = async (file, action) => {
     if (action === "download") {
-      try {
-        const res = await API.get(`/files/${file.id}/download`);
-        window.open(res.data.downloadUrl, "_blank");
-      } catch (err) {
-        console.error("Download failed:", err);
-      }
+      await downloadFile(file);
     }
 
     if (action === "delete") {
@@ -145,6 +141,7 @@ const Starred = () => {
       )}
 
       {/* CONTENT */}
+      {/* CONTENT */}
       {!loading && starredItems.length > 0 && (
         <div className="space-y-10">
           {/* STARRED FOLDERS */}
@@ -159,24 +156,13 @@ const Starred = () => {
               >
                 <AnimatePresence mode="popLayout">
                   {folders.map((folder) => (
-                    <div key={folder.id} className="relative">
-                      <FolderCard
-                        folder={folder}
-                        onNavigate={() => {}}
-                        onAction={handleFolderAction}
-                      />
-                      {/* Unstar button */}
-                      <button
-                        onClick={() => handleUnstar(folder)}
-                        className="absolute top-2 left-2 p-1.5 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
-                        title="Remove from starred"
-                      >
-                        <Star
-                          size={12}
-                          className="text-yellow-500 fill-yellow-400"
-                        />
-                      </button>
-                    </div>
+                    <FolderCard
+                      key={folder.id}
+                      folder={folder}
+                      onNavigate={() => {}}
+                      onAction={handleFolderAction}
+                      onStarToggle={() => handleUnstar(folder)}
+                    />
                   ))}
                 </AnimatePresence>
               </motion.div>
@@ -195,24 +181,13 @@ const Starred = () => {
               >
                 <AnimatePresence mode="popLayout">
                   {files.map((file) => (
-                    <div key={file.id} className="relative">
-                      <FileCard
-                        file={file}
-                        onPreview={(f) => setPreviewFile(f)}
-                        onAction={handleFileAction}
-                      />
-                      {/* Unstar button */}
-                      <button
-                        onClick={() => handleUnstar(file)}
-                        className="absolute top-2 left-2 p-1.5 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
-                        title="Remove from starred"
-                      >
-                        <Star
-                          size={12}
-                          className="text-yellow-500 fill-yellow-400"
-                        />
-                      </button>
-                    </div>
+                    <FileCard
+                      key={file.id}
+                      file={file}
+                      onPreview={(f) => setPreviewFile(f)}
+                      onAction={handleFileAction}
+                      onStarToggle={() => handleUnstar(file)}
+                    />
                   ))}
                 </AnimatePresence>
               </motion.div>

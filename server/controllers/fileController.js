@@ -113,14 +113,32 @@ exports.getFolders = async (req, res) => {
 };
 
 // --- 1. INITIALIZE UPLOAD ---
+
 exports.initializeUpload = async (req, res) => {
   try {
     const { fileName, mimeType, folderId = null } = req.body;
-    const ownerId = req.user.id; // From authMiddleware
+    const ownerId = req.user.id;
 
     if (!fileName) {
       return res.status(400).json({ message: "File name is required" });
     }
+
+    // --- STORAGE LIMIT CHECK ---
+    const totalLimit = 100 * 1024 * 1024; // 100MB
+    const usageResult = await db.query(
+      "SELECT SUM(size_bytes) as used_bytes FROM files WHERE owner_id = $1 AND is_deleted = false",
+      [ownerId],
+    );
+    const usedBytes = parseInt(usageResult.rows[0].used_bytes) || 0;
+
+    if (usedBytes >= totalLimit) {
+      return res.status(403).json({
+        message:
+          "Storage limit reached. You have used 100MB of your 100MB quota. Please delete files to free up space.",
+        storageExceeded: true,
+      });
+    }
+    // --- END STORAGE CHECK ---
 
     const fileUuid = uuidv4();
     const storageKey = `tenants/${ownerId}/files/${fileUuid}-${fileName}`;
@@ -144,6 +162,38 @@ exports.initializeUpload = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// exports.initializeUpload = async (req, res) => {
+//   try {
+//     const { fileName, mimeType, folderId = null } = req.body;
+//     const ownerId = req.user.id; // From authMiddleware
+
+//     if (!fileName) {
+//       return res.status(400).json({ message: "File name is required" });
+//     }
+
+//     const fileUuid = uuidv4();
+//     const storageKey = `tenants/${ownerId}/files/${fileUuid}-${fileName}`;
+
+//     const query = `
+//       INSERT INTO files (name, storage_key, mime_type, owner_id, folder_id, status)
+//       VALUES ($1, $2, $3, $4, $5, 'pending')
+//       RETURNING id, storage_key;
+//     `;
+
+//     const values = [fileName, storageKey, mimeType, ownerId, folderId];
+//     const result = await db.query(query, values);
+
+//     res.status(201).json({
+//       message: "Upload initialized",
+//       fileId: result.rows[0].id,
+//       storageKey: result.rows[0].storage_key,
+//     });
+//   } catch (error) {
+//     console.error("Init Error:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
 
 // --- 2. EXECUTE UPLOAD ---
 
@@ -659,19 +709,55 @@ exports.getFolderContents = async (req, res) => {
 // };
 
 // --- 5. RENAME FOLDER (The "Update" in CRUD) ---
+
 exports.renameFolder = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newName } = req.body;
+    const { newName, parentId } = req.body; // ← accept both
     const userId = req.user.id;
 
-    const query = `
-      UPDATE folders 
-      SET name = $1, updated_at = now() 
-      WHERE id = $2 AND owner_id = $3 
-      RETURNING *;
-    `;
-    const result = await db.query(query, [newName, id, userId]);
+    // Prevent moving folder into itself
+    if (parentId === id) {
+      return res
+        .status(400)
+        .json({ message: "Cannot move folder into itself" });
+    }
+
+    let query;
+    let values;
+
+    if (newName && parentId !== undefined) {
+      // Both rename + move
+      query = `
+        UPDATE folders
+        SET name = $1, parent_id = $2, updated_at = now()
+        WHERE id = $3 AND owner_id = $4
+        RETURNING *
+      `;
+      values = [newName, parentId, id, userId];
+    } else if (newName) {
+      // Only rename
+      query = `
+        UPDATE folders
+        SET name = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3
+        RETURNING *
+      `;
+      values = [newName, id, userId];
+    } else if (parentId !== undefined) {
+      // Only move — parentId can be null (move to root)
+      query = `
+        UPDATE folders
+        SET parent_id = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3
+        RETURNING *
+      `;
+      values = [parentId, id, userId];
+    } else {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    const result = await db.query(query, values);
 
     if (result.rows.length === 0) {
       return res
@@ -679,18 +765,59 @@ exports.renameFolder = async (req, res) => {
         .json({ message: "Folder not found or unauthorized" });
     }
 
-    // LOG ACTIVITY
-    await db.query(
-      "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
-      [userId, id, "renamed", `Folder renamed to '${newName}'`],
-    );
+    // Log activity
+    if (newName) {
+      await db.query(
+        "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
+        [userId, id, "renamed", `Folder renamed to '${newName}'`],
+      );
+    }
+    if (parentId !== undefined) {
+      await db.query(
+        "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
+        [userId, id, "move", `Moved folder to '${parentId ?? "root"}'`],
+      );
+    }
 
     res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error("Rename Folder Error:", error);
-    res.status(500).json({ message: "Error renaming folder" });
+    console.error("Update Folder Error:", error);
+    res.status(500).json({ message: "Error updating folder" });
   }
 };
+
+// exports.renameFolder = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { newName } = req.body;
+//     const userId = req.user.id;
+
+//     const query = `
+//       UPDATE folders
+//       SET name = $1, updated_at = now()
+//       WHERE id = $2 AND owner_id = $3
+//       RETURNING *;
+//     `;
+//     const result = await db.query(query, [newName, id, userId]);
+
+//     if (result.rows.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "Folder not found or unauthorized" });
+//     }
+
+//     // LOG ACTIVITY
+//     await db.query(
+//       "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
+//       [userId, id, "renamed", `Folder renamed to '${newName}'`],
+//     );
+
+//     res.status(200).json(result.rows[0]);
+//   } catch (error) {
+//     console.error("Rename Folder Error:", error);
+//     res.status(500).json({ message: "Error renaming folder" });
+//   }
+// };
 
 // --- 6. SOFT DELETE FOLDER (The "Delete" in CRUD) ---
 exports.deleteFolder = async (req, res) => {
@@ -750,31 +877,100 @@ exports.permanentDeleteFolder = async (req, res) => {
 };
 
 // --- 7. RENAME FILE ---
+
 exports.renameFile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newName } = req.body;
+    const { newName, folderId } = req.body; // ← accept both
     const userId = req.user.id;
 
-    const result = await db.query(
-      "UPDATE files SET name = $1, updated_at = now() WHERE id = $2 AND owner_id = $3 RETURNING *",
-      [newName, id, userId],
-    );
+    // Build dynamic query based on what was sent
+    let query;
+    let values;
 
-    if (result.rows.length === 0)
+    if (newName && folderId !== undefined) {
+      // Both rename + move
+      query = `
+        UPDATE files
+        SET name = $1, folder_id = $2, updated_at = now()
+        WHERE id = $3 AND owner_id = $4
+        RETURNING *
+      `;
+      values = [newName, folderId, id, userId];
+    } else if (newName) {
+      // Only rename
+      query = `
+        UPDATE files
+        SET name = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3
+        RETURNING *
+      `;
+      values = [newName, id, userId];
+    } else if (folderId !== undefined) {
+      // Only move — folderId can be null (move to root)
+      query = `
+        UPDATE files
+        SET folder_id = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3
+        RETURNING *
+      `;
+      values = [folderId, id, userId];
+    } else {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    const result = await db.query(query, values);
+
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "File not found" });
+    }
 
-    // LOG ACTIVITY
-    await db.query(
-      "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
-      [userId, id, "renamed", `Renamed file to '${newName}'`],
-    );
+    // Log activity
+    if (newName) {
+      await db.query(
+        "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
+        [userId, id, "renamed", `Renamed file to '${newName}'`],
+      );
+    }
+    if (folderId !== undefined) {
+      await db.query(
+        "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
+        [userId, id, "move", `Moved file to folder '${folderId ?? "root"}'`],
+      );
+    }
 
     res.status(200).json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: "Error renaming file" });
+    console.error("Update File Error:", error);
+    res.status(500).json({ message: "Error updating file" });
   }
 };
+
+// exports.renameFile = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { newName } = req.body;
+//     const userId = req.user.id;
+
+//     const result = await db.query(
+//       "UPDATE files SET name = $1, updated_at = now() WHERE id = $2 AND owner_id = $3 RETURNING *",
+//       [newName, id, userId],
+//     );
+
+//     if (result.rows.length === 0)
+//       return res.status(404).json({ message: "File not found" });
+
+//     // LOG ACTIVITY
+//     await db.query(
+//       "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
+//       [userId, id, "renamed", `Renamed file to '${newName}'`],
+//     );
+
+//     res.status(200).json(result.rows[0]);
+//   } catch (error) {
+//     res.status(500).json({ message: "Error renaming file" });
+//   }
+// };
 
 // --- 8. SOFT DELETE FILE (Move to Trash) ---
 exports.deleteFile = async (req, res) => {

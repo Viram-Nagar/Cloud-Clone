@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import downloadFile from "../util/DownloadFile.jsx";
+import { useSearchParams } from "react-router-dom";
 import { Search, FileX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../api.jsx";
@@ -10,7 +11,6 @@ import VersionModal from "../components/ui/VersionModal";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const query = searchParams.get("q") || "";
 
   const [results, setResults] = useState([]);
@@ -19,7 +19,6 @@ const SearchPage = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [localQuery, setLocalQuery] = useState(query);
 
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versionTarget, setVersionTarget] = useState(null);
@@ -49,21 +48,16 @@ const SearchPage = () => {
   };
 
   // --- 2. Handle search form submit ---
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!localQuery.trim()) return;
-    navigate(`/search?q=${encodeURIComponent(localQuery.trim())}`);
-  };
+  // const handleSearch = (e) => {
+  //   e.preventDefault();
+  //   if (!localQuery.trim()) return;
+  //   navigate(`/search?q=${encodeURIComponent(localQuery.trim())}`);
+  // };
 
   // --- 3. File actions ---
   const handleFileAction = async (file, action) => {
     if (action === "download") {
-      try {
-        const res = await API.get(`/files/${file.id}/download`);
-        window.open(res.data.downloadUrl, "_blank");
-      } catch (err) {
-        console.error("Download failed:", err);
-      }
+      await downloadFile(file);
     }
 
     if (action === "delete") {
@@ -96,7 +90,7 @@ const SearchPage = () => {
   return (
     <div className="space-y-6">
       {/* A. SEARCH BAR */}
-      <div className="bg-surface border border-border rounded-3xl p-4 shadow-sm">
+      {/* <div className="bg-surface border border-border rounded-3xl p-4 shadow-sm">
         <form onSubmit={handleSearch} className="flex gap-3">
           <div className="relative flex-1">
             <Search
@@ -125,7 +119,7 @@ const SearchPage = () => {
             Search
           </button>
         </form>
-      </div>
+      </div> */}
 
       {/* B. RESULTS HEADER */}
       {query && !loading && (

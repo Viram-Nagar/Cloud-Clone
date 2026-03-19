@@ -9,7 +9,7 @@ const Card = ({ children, className = "", noPadding = false }) => {
     
       rounded-3xl shadow-sm
     
-      ${noPadding ? "p-0" : "p-8"} 
+      ${noPadding ? "p-0" : "p-2"} 
     
       ${className}
     `}
