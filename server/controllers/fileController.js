@@ -43,24 +43,50 @@ exports.getFiles = async (req, res) => {
 
     if (folderId && folderId !== "null") {
       // Fetch files within a specific folder
+
       queryText = `
-        SELECT * FROM files 
-        WHERE owner_id = $1 
-        AND folder_id = $2 
-        AND is_deleted = false 
-        ORDER BY created_at DESC
-      `;
+  SELECT f.*,
+    CASE WHEN s.file_id IS NOT NULL THEN true ELSE false END as is_starred
+  FROM files f
+  LEFT JOIN stars s ON s.file_id = f.id AND s.user_id = $1
+  WHERE f.owner_id = $1
+  AND f.folder_id = $2
+  AND f.is_deleted = false
+  ORDER BY f.created_at DESC
+`;
       queryParams = [userId, folderId];
+
+      // queryText = `
+      //   SELECT * FROM files
+      //   WHERE owner_id = $1
+      //   AND folder_id = $2
+      //   AND is_deleted = false
+      //   ORDER BY created_at DESC
+      // `;
+      // queryParams = [userId, folderId];
     } else {
       // Fetch files in the root directory (folder_id is NULL)
+
       queryText = `
-        SELECT * FROM files 
-        WHERE owner_id = $1 
-        AND folder_id IS NULL 
-        AND is_deleted = false 
-        ORDER BY created_at DESC
-      `;
+  SELECT f.*,
+    CASE WHEN s.file_id IS NOT NULL THEN true ELSE false END as is_starred
+  FROM files f
+  LEFT JOIN stars s ON s.file_id = f.id AND s.user_id = $1
+  WHERE f.owner_id = $1
+  AND f.folder_id IS NULL
+  AND f.is_deleted = false
+  ORDER BY f.created_at DESC
+`;
       queryParams = [userId];
+
+      // queryText = `
+      //   SELECT * FROM files
+      //   WHERE owner_id = $1
+      //   AND folder_id IS NULL
+      //   AND is_deleted = false
+      //   ORDER BY created_at DESC
+      // `;
+      // queryParams = [userId];
     }
 
     const result = await db.query(queryText, queryParams);

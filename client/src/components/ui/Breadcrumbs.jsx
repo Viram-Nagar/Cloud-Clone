@@ -16,14 +16,15 @@ const DroppableCrumb = ({ id, folderId, children, isLast }) => {
   return (
     <div
       ref={setNodeRef}
+      style={{ pointerEvents: "all" }}
       className={`
-        flex items-center px-2 py-1 rounded-xl transition-all duration-150
-        ${
-          isOver
-            ? "bg-brand-blue/10 ring-2 ring-brand-blue/40 scale-105"
-            : "bg-transparent"
-        }
-      `}
+      flex items-center px-4 py-2 rounded-xl transition-all duration-150 min-w-[60px] justify-center
+      ${
+        isOver
+          ? "bg-brand-blue/10 ring-2 ring-brand-blue/40 scale-105"
+          : "bg-transparent hover:bg-bg-main"
+      }
+    `}
     >
       {/* Drop indicator */}
       {isOver && (
@@ -57,7 +58,7 @@ const Breadcrumbs = ({ paths = [], items = [], className = "" }) => {
 
   return (
     <nav
-      className={`flex items-center space-x-1 text-sm font-medium flex-wrap ${className}`}
+      className={`flex items-center gap-1 text-sm font-medium flex-wrap ${className}`}
     >
       {/* Root "My Drive" — always droppable */}
       <DroppableCrumb id="root" folderId={null}>
@@ -97,9 +98,10 @@ const Breadcrumbs = ({ paths = [], items = [], className = "" }) => {
                     onClick={crumb.onClick}
                     className={`transition-colors truncate max-w-[120px] ${
                       isLast
-                        ? "text-text-primary font-bold cursor-default pointer-events-none"
+                        ? "text-text-primary font-bold cursor-default"
                         : "text-text-secondary hover:text-brand-blue"
                     }`}
+                    style={isLast ? { pointerEvents: "none" } : {}}
                   >
                     {crumb.name}
                   </button>

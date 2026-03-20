@@ -145,6 +145,11 @@ const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
   const [isStarred, setIsStarred] = useState(file.is_starred || false);
   const [isStarring, setIsStarring] = useState(false);
 
+  // Sync star state when file prop changes (e.g. after navigation)
+  useEffect(() => {
+    setIsStarred(file.is_starred || false);
+  }, [file.is_starred]);
+
   // --- Drag setup ---
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
