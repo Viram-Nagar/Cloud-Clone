@@ -1,4 +1,6 @@
 import React from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   BrowserRouter as Router,
   Routes,
@@ -18,51 +20,76 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import FilePreviewPage from "./pages/FilePreviewPage";
+import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
 
 const App = () => {
   const { loading, user } = useAuth();
 
   return (
-    <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
-        />
-        <Route path="/signup" element={<Signup />} />
+    <>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={true}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+        toastClassName="!rounded-2xl !shadow-2xl !font-semibold !text-sm !min-w-[280px]"
+        bodyClassName="!font-semibold !text-sm !py-1"
+        closeButton={false}
+        icon={({ type }) => {
+          if (type === "success")
+            return <CheckCircle size={20} strokeWidth={2} />;
+          if (type === "error") return <XCircle size={20} strokeWidth={2} />;
+          if (type === "warning")
+            return <AlertTriangle size={20} strokeWidth={2} />;
+          if (type === "info") return <Info size={20} strokeWidth={2} />;
+          return null;
+        }}
+      />
+      <Router>
+        <Routes>
+          <Route
+            path="/login"
+            element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
+          />
+          <Route path="/signup" element={<Signup />} />
 
-        {/* PUBLIC SHARE — no login needed */}
-        <Route path="/share/:token" element={<PublicShare />} />
+          {/* PUBLIC SHARE — no login needed */}
+          <Route path="/share/:token" element={<PublicShare />} />
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/shared" element={<SharedWithMe />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/recent" element={<Recent />} />
-          <Route path="/starred" element={<Starred />} />
-          <Route path="/trash" element={<Trash />} />
-        </Route>
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/shared" element={<SharedWithMe />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/recent" element={<Recent />} />
+            <Route path="/starred" element={<Starred />} />
+            <Route path="/trash" element={<Trash />} />
+          </Route>
 
-        {/* FILE PREVIEW — full page, inside ProtectedRoute but outside MainLayout */}
-        <Route
-          path="/preview/:fileId"
-          element={
-            <ProtectedRoute>
-              <FilePreviewPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* FILE PREVIEW — full page, inside ProtectedRoute but outside MainLayout */}
+          <Route
+            path="/preview/:fileId"
+            element={
+              <ProtectedRoute>
+                <FilePreviewPage />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Router>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+    </>
   );
 };
 

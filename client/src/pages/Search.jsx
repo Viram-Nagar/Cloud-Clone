@@ -1,3 +1,9 @@
+import useViewPreference from "../hooks/useViewPreference";
+import ViewToggle from "../components/ui/ViewToggle";
+import SortDropdown from "../components/ui/SortDropdown";
+import TypeFilter from "../components/ui/TypeFilter";
+import FileListView from "../components/ui/FileListView";
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import downloadFile from "../util/DownloadFile.jsx";
 import { useSearchParams } from "react-router-dom";
@@ -10,6 +16,11 @@ import ShareModal from "../components/ui/ShareModal";
 import VersionModal from "../components/ui/VersionModal";
 
 const SearchPage = () => {
+  const { viewMode, toggleView } = useViewPreference("search-view");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [typeFilter, setTypeFilter] = useState("");
+
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
 
@@ -42,6 +53,7 @@ const SearchPage = () => {
     } catch (err) {
       setError("Search failed. Please try again.");
       console.error("Search error:", err);
+      toast.error("Search failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -87,6 +99,44 @@ const SearchPage = () => {
     }
   };
 
+  const getFilteredAndSorted = (items) => {
+    let filtered = [...items];
+
+    if (typeFilter) {
+      filtered = filtered.filter((f) => {
+        const mime = f.mime_type || "";
+        if (typeFilter === "image") return mime.startsWith("image/");
+        if (typeFilter === "pdf") return mime === "application/pdf";
+        if (typeFilter === "word") return mime.includes("wordprocessingml");
+        if (typeFilter === "excel")
+          return mime.includes("spreadsheetml") || mime.includes("ms-excel");
+        if (typeFilter === "ppt")
+          return (
+            mime.includes("presentationml") || mime.includes("ms-powerpoint")
+          );
+        if (typeFilter === "video") return mime.startsWith("video/");
+        if (typeFilter === "audio") return mime.startsWith("audio/");
+        if (typeFilter === "text")
+          return mime === "text/plain" || mime === "text/csv";
+        return true;
+      });
+    }
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "name") comparison = a.name.localeCompare(b.name);
+      if (sortBy === "size")
+        comparison = (a.size_bytes || 0) - (b.size_bytes || 0);
+      if (sortBy === "date")
+        comparison = new Date(a.updated_at) - new Date(b.updated_at);
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
+    return filtered;
+  };
+
+  const filteredResults = getFilteredAndSorted(results);
+
   return (
     <div className="space-y-6">
       {/* A. SEARCH BAR */}
@@ -122,7 +172,7 @@ const SearchPage = () => {
       </div> */}
 
       {/* B. RESULTS HEADER */}
-      {query && !loading && (
+      {/* {query && !loading && (
         <div className="px-1">
           <p className="text-sm text-text-secondary">
             {results.length > 0 ? (
@@ -141,6 +191,24 @@ const SearchPage = () => {
               </>
             )}
           </p>
+        </div>
+      )} */}
+
+      {/* CONTROLS */}
+      {query && !loading && results.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <TypeFilter value={typeFilter} onChange={setTypeFilter} />
+          <SortDropdown
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onChange={(key, order) => {
+              setSortBy(key);
+              setSortOrder(order);
+            }}
+          />
+          <div className="ml-auto">
+            <ViewToggle viewMode={viewMode} onToggle={toggleView} />
+          </div>
         </div>
       )}
 
@@ -190,7 +258,7 @@ const SearchPage = () => {
       )}
 
       {/* G. RESULTS GRID */}
-      {!loading && results.length > 0 && (
+      {/* {!loading && results.length > 0 && (
         <motion.div
           layout
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
@@ -207,8 +275,37 @@ const SearchPage = () => {
             ))}
           </AnimatePresence>
         </motion.div>
-      )}
-
+      )} */}
+      {/* G. RESULTS */}
+      {!loading &&
+        filteredResults.length > 0 &&
+        (viewMode === "list" ? (
+          <FileListView
+            files={filteredResults}
+            folders={[]}
+            onFileAction={handleFileAction}
+            currentFolderId={null}
+            folderName="Search"
+            fullPath={[]}
+          />
+        ) : (
+          <motion.div
+            layout
+            className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredResults.map((file) => (
+                <FileCard
+                  key={file.id}
+                  file={file}
+                  onAction={handleFileAction}
+                  currentFolderId={file.folder_id ?? null}
+                  folderName="Search"
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        ))}
       {/* H. FILE PREVIEW MODAL */}
 
       {/* I. SHARE MODAL */}

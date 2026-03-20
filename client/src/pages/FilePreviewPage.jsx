@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
@@ -74,6 +75,7 @@ const FilePreviewPage = () => {
       } catch (err) {
         console.error("Preview fetch failed:", err);
         setError("Failed to load file. Please try again.");
+        toast.error("Failed to load file");
       } finally {
         setLoading(false);
       }
@@ -94,7 +96,13 @@ const FilePreviewPage = () => {
 
   // --- Download handler ---
   const handleDownload = async () => {
-    if (file) await downloadFile(file);
+    if (!file) return;
+    try {
+      await downloadFile(file);
+      toast.success("Download started");
+    } catch (err) {
+      toast.error("Download failed");
+    }
   };
 
   const mime = file?.mime_type || "";

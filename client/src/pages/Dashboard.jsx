@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import FileIcon from "../components/ui/FileIcon";
 import {
   DndContext,
@@ -18,6 +19,10 @@ import VersionModal from "../components/ui/VersionModal";
 import downloadFile from "../util/DownloadFile.jsx";
 
 import Button from "../components/ui/Button";
+import useViewPreference from "../hooks/useViewPreference";
+import ViewToggle from "../components/ui/ViewToggle";
+import SortDropdown from "../components/ui/SortDropdown";
+import FileListView from "../components/ui/FileListView";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
 import { useSearchParams } from "react-router-dom";
@@ -29,6 +34,8 @@ const Dashboard = () => {
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const { viewMode, toggleView } = useViewPreference("dashboard-view");
 
   // Rename Modal State
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -107,16 +114,19 @@ const Dashboard = () => {
         await API.patch(`/files/${dragData.id}`, {
           folderId: targetFolderId,
         });
+        toast.success(`"${dragData.name}" moved successfully`);
       } else if (dragData.type === "folder") {
         await API.patch(`/files/folders/${dragData.id}`, {
           parentId: targetFolderId,
         });
+        toast.success(`"${dragData.name}" moved successfully`);
       }
 
       fetchContent();
       window.dispatchEvent(new Event("storage-updated"));
     } catch (err) {
       console.error("Move failed:", err);
+      toast.error(`Failed to move "${dragData.name}"`);
     }
   };
 
@@ -212,8 +222,10 @@ const Dashboard = () => {
       setNewFolderName("");
       setIsFolderModalOpen(false);
       fetchContent();
+      toast.success("Folder created successfully");
     } catch (err) {
       console.error("Error creating folder:", err);
+      toast.error("Failed to create folder");
     } finally {
       setIsCreating(false);
     }
@@ -230,8 +242,10 @@ const Dashboard = () => {
         await API.delete(`/files/${file.id}`);
         fetchContent();
         window.dispatchEvent(new Event("storage-updated"));
+        toast.success("File moved to trash");
       } catch (err) {
         console.error("Delete failed:", err);
+        toast.error("Failed to delete file");
       }
     }
 
@@ -258,8 +272,10 @@ const Dashboard = () => {
       try {
         await API.delete(`/files/folders/${folder.id}`);
         fetchContent();
+        toast.success("Folder moved to trash");
       } catch (err) {
         console.error("Folder delete failed:", err);
+        toast.error("Failed to delete folder");
       }
     }
 
@@ -289,8 +305,12 @@ const Dashboard = () => {
       setRenameTarget(null);
       setNewName("");
       fetchContent();
+      toast.success(
+        `${renameTarget.type === "folder" ? "Folder" : "File"} renamed successfully`,
+      );
     } catch (err) {
       console.error("Rename failed:", err);
+      toast.error("Failed to rename");
     } finally {
       setIsRenaming(false);
     }
@@ -396,7 +416,7 @@ const Dashboard = () => {
               </h2>
 
               <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1 bg-bg-main border border-border rounded-xl p-1">
+                {/* <div className="flex items-center gap-1 bg-bg-main border border-border rounded-xl p-1">
                   {[
                     { key: "name", label: "Name" },
                     { key: "size", label: "Size" },
@@ -432,7 +452,18 @@ const Dashboard = () => {
                       )}
                     </button>
                   ))}
-                </div>
+                </div> */}
+
+                <SortDropdown
+                  sortBy={sortBy}
+                  sortOrder={sortOrder}
+                  onChange={(key, order) => {
+                    setSortBy(key);
+                    setSortOrder(order);
+                  }}
+                />
+                <ViewToggle viewMode={viewMode} onToggle={toggleView} />
+
                 <div className="w-px h-6 bg-border" />
                 <Button
                   variant="secondary"
@@ -462,7 +493,7 @@ const Dashboard = () => {
 
               {/* Row 2: Sort left + Buttons right */}
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 bg-bg-main border border-border rounded-xl p-1">
+                {/* <div className="flex items-center gap-1 bg-bg-main border border-border rounded-xl p-1">
                   {[
                     { key: "name", label: "Name" },
                     { key: "size", label: "Size" },
@@ -498,7 +529,18 @@ const Dashboard = () => {
                       )}
                     </button>
                   ))}
-                </div>
+                </div> */}
+
+                <SortDropdown
+                  sortBy={sortBy}
+                  sortOrder={sortOrder}
+                  onChange={(key, order) => {
+                    setSortBy(key);
+                    setSortOrder(order);
+                  }}
+                />
+                <ViewToggle viewMode={viewMode} onToggle={toggleView} />
+
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="w-px h-6 bg-border" />
                   <Button
@@ -528,22 +570,15 @@ const Dashboard = () => {
                 <h2 className="text-xl font-bold text-text-primary px-2 truncate min-w-0">
                   {path[path.length - 1].name}
                 </h2>
-                <select
-                  className="text-xs font-bold bg-bg-main border border-border rounded-xl px-2 py-1.5 text-text-secondary outline-none shrink-0"
-                  value={`${sortBy}-${sortOrder}`}
-                  onChange={(e) => {
-                    const [key, order] = e.target.value.split("-");
+                <SortDropdown
+                  sortBy={sortBy}
+                  sortOrder={sortOrder}
+                  onChange={(key, order) => {
                     setSortBy(key);
                     setSortOrder(order);
                   }}
-                >
-                  <option value="name-asc">Name A→Z</option>
-                  <option value="name-desc">Name Z→A</option>
-                  <option value="size-asc">Size ↑</option>
-                  <option value="size-desc">Size ↓</option>
-                  <option value="date-asc">Date ↑</option>
-                  <option value="date-desc">Date ↓</option>
-                </select>
+                />
+                <ViewToggle viewMode={viewMode} onToggle={toggleView} />
               </div>
 
               {/* Row 2: New Folder + Upload full width */}
@@ -569,6 +604,7 @@ const Dashboard = () => {
           </div>
 
           {/* C. CONTENT AREA */}
+          {/* C. CONTENT AREA */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-32">
               <div className="animate-spin h-10 w-10 border-4 border-brand-blue border-t-transparent rounded-full mb-4" />
@@ -576,6 +612,17 @@ const Dashboard = () => {
                 Loading your files...
               </p>
             </div>
+          ) : viewMode === "list" ? (
+            <FileListView
+              files={sortedFiles}
+              folders={sortedFolders}
+              onFileAction={handleFileAction}
+              onFolderAction={handleFolderAction}
+              onNavigate={handleFolderClick}
+              currentFolderId={currentFolderId}
+              folderName={path[path.length - 1].name}
+              fullPath={path}
+            />
           ) : (
             <div className="space-y-10">
               {/* FOLDERS SECTION */}
@@ -613,16 +660,6 @@ const Dashboard = () => {
                     className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
                   >
                     <AnimatePresence mode="popLayout">
-                      {/* {sortedFiles.map((file) => (
-                        <FileCard
-                          key={file.id}
-                          file={file}
-                          onAction={handleFileAction}
-                          currentFolderId={currentFolderId}
-                          folderName={path[path.length - 1].name}
-                        />
-                      ))} */}
-
                       {sortedFiles.map((file) => (
                         <FileCard
                           key={file.id}
@@ -635,8 +672,7 @@ const Dashboard = () => {
                       ))}
                     </AnimatePresence>
                   </motion.div>
-                ) : // Only show "no files" if there ARE folders (folder-only view)
-                folders.length > 0 ? (
+                ) : folders.length > 0 ? (
                   <div className="text-center py-12 text-text-secondary">
                     No files in this folder.
                   </div>

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { createContext, useState, useEffect, useContext } from "react";
 import API from "../api.jsx";
 
@@ -71,8 +72,7 @@ export const AuthProvider = ({ children }) => {
       // Always wipe the local session
       localStorage.removeItem("token");
       setUser(null);
-
-      // Optional: Redirect to login or refresh the page to clear any sensitive state
+      toast.success("Logged out successfully");
       window.location.href = "/login";
     }
   };

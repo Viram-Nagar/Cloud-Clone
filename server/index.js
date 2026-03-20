@@ -15,6 +15,20 @@ const authLimiter = rateLimit({
   message: { message: "Too many attempts, please try again after 5 minutes" },
 });
 
+// General limiter for files — 200 requests per 15 mins
+const filesLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { message: "Too many requests, please slow down" },
+});
+
+// General limiter for shares — 100 requests per 15 mins
+const sharesLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: "Too many requests, please slow down" },
+});
+
 require("dotenv").config();
 
 const app = express();
@@ -23,8 +37,8 @@ const app = express();
 app.use(helmet());
 const allowedOrigins = [
   "http://localhost:5173", // Your current Vite dev server
-  "https://cloud-clone.vercel.app", // Your Vercel production URL (if it hosts the frontend)
-  // Add any other frontend URLs you use here
+  "https://cloud-verse.vercel.app",
+  "https://cloud-clone.vercel.app",
 ];
 
 app.use(
@@ -50,8 +64,8 @@ app.use(cookieParser());
 // Routes
 // Apply only to auth routes
 app.use("/api/auth", authLimiter, authRoutes);
-app.use("/api/files", fileRoutes);
-app.use("/api/shares", shareRoutes);
+app.use("/api/files", filesLimiter, fileRoutes);
+app.use("/api/shares", sharesLimiter, shareRoutes);
 
 // Start the automated tasks
 initCronJobs();

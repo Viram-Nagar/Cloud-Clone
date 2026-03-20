@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { Trash2, RotateCcw, X, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,8 +56,10 @@ const Trash = () => {
       await API.post(`/files/${item.id}/restore`, { type: item.type });
       // Remove from trash list immediately
       setTrashItems((prev) => prev.filter((i) => i.id !== item.id));
+      toast.success(`${item.name} restored successfully`);
     } catch (err) {
       console.error("Restore failed:", err);
+      toast.error("Failed to restore item");
     }
   };
 
@@ -75,8 +78,10 @@ const Trash = () => {
       setTrashItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
+      toast.success("Permanently deleted");
     } catch (err) {
       console.error("Permanent delete failed:", err);
+      toast.error("Failed to permanently delete");
     } finally {
       setIsProcessing(false);
     }
@@ -97,8 +102,10 @@ const Trash = () => {
 
       setTrashItems([]);
       setIsEmptyTrashModalOpen(false);
+      toast.success("Trash emptied successfully");
     } catch (err) {
       console.error("Empty trash failed:", err);
+      toast.error("Failed to empty trash");
     } finally {
       setIsProcessing(false);
     }

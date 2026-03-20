@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import API from "../api.jsx";
 import FileCard from "../components/ui/FileCard";
@@ -88,8 +89,14 @@ const SharedWithMe = () => {
       setRenameTarget(null);
       setNewName("");
       fetchSharedItems();
+      toast.success("File renamed successfully");
     } catch (err) {
       console.error("Rename failed:", err);
+      if (err.response?.status === 403) {
+        toast.error("You don't have permission to rename this file");
+      } else {
+        toast.error("Failed to rename file");
+      }
     } finally {
       setIsRenaming(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, FileCheck, AlertCircle } from "lucide-react";
@@ -52,11 +53,19 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
 
       // STEP 3: Done!
       updateFile(id, { status: "done", progress: 100 });
+      toast.success(`${file.name} uploaded successfully`);
     } catch (err) {
-      updateFile(id, {
-        status: "error",
-        error: err.response?.data?.message || "Upload failed",
-      });
+      const errMsg = err.response?.data?.message || "Upload failed";
+      updateFile(id, { status: "error", error: errMsg });
+      if (err.response?.status === 403 && err.response?.data?.storageExceeded) {
+        toast.warning("Storage limit reached! Delete files to free up space.");
+      } else if (errMsg.includes("Invalid file type")) {
+        toast.error("Invalid file type. Check allowed formats.");
+      } else if (err.response?.status === 413 || errMsg.includes("too large")) {
+        toast.error("File too large. Maximum size is 5MB.");
+      } else {
+        toast.error(`Failed to upload ${file.name}`);
+      }
     }
   };
 

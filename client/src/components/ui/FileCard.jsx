@@ -21,6 +21,123 @@ import ContextMenu from "./ContextMenu";
 import API from "../../api.jsx";
 
 // --- Preview Component (unchanged) ---
+// const FilePreview = ({ file }) => {
+//   const [previewUrl, setPreviewUrl] = useState(null);
+//   const [loading, setLoading] = useState(false);
+//   const containerRef = useRef(null);
+//   const [isVisible, setIsVisible] = useState(false);
+
+//   const mime = file.mime_type || "";
+//   const isImage = mime.startsWith("image/");
+//   const isPDF = mime === "application/pdf";
+
+//   useEffect(() => {
+//     if (!isImage && !isPDF) return;
+//     const observer = new IntersectionObserver(
+//       ([entry]) => {
+//         if (entry.isIntersecting) {
+//           setIsVisible(true);
+//           observer.disconnect();
+//         }
+//       },
+//       { threshold: 0.1 },
+//     );
+//     if (containerRef.current) observer.observe(containerRef.current);
+//     return () => observer.disconnect();
+//   }, [isImage, isPDF]);
+
+//   useEffect(() => {
+//     if (!isVisible || !file.id) return;
+//     let cancelled = false;
+//     const fetchPreview = async () => {
+//       setLoading(true);
+//       try {
+//         const res = await API.get(`/files/${file.id}/download`);
+//         if (!cancelled) setPreviewUrl(res.data.downloadUrl);
+//       } catch (err) {
+//         console.error("Preview fetch failed:", err);
+//       } finally {
+//         if (!cancelled) setLoading(false);
+//       }
+//     };
+//     fetchPreview();
+//     return () => {
+//       cancelled = true;
+//     };
+//   }, [isVisible, file.id]);
+
+//   if (isImage) {
+//     return (
+//       <div
+//         ref={containerRef}
+//         className="w-full rounded-xl overflow-hidden bg-bg-main flex items-center justify-center"
+//         style={{ aspectRatio: "1/1" }}
+//       >
+//         {!isVisible || loading ? (
+//           <div className="animate-spin h-5 w-5 border-2 border-brand-blue border-t-transparent rounded-full" />
+//         ) : previewUrl ? (
+//           <img
+//             src={previewUrl}
+//             alt={file.name}
+//             className="w-full h-full object-cover"
+//             onError={() => setPreviewUrl(null)}
+//           />
+//         ) : (
+//           <FileIcon fileName={file.name} size={36} />
+//         )}
+//       </div>
+//     );
+//   }
+
+//   if (isPDF) {
+//     return (
+//       <div
+//         ref={containerRef}
+//         className="w-full rounded-xl overflow-hidden bg-red-50 flex items-center justify-center border border-red-100"
+//         style={{ aspectRatio: "1/1" }}
+//       >
+//         {!isVisible || loading ? (
+//           <div className="animate-spin h-5 w-5 border-2 border-red-400 border-t-transparent rounded-full" />
+//         ) : previewUrl ? (
+//           <iframe
+//             src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+//             className="w-full h-full pointer-events-none"
+//             title={file.name}
+//           />
+//         ) : (
+//           <FileIcon fileName={file.name} size={36} />
+//         )}
+//       </div>
+//     );
+//   }
+
+//   if (
+//     mime ===
+//     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+//   ) {
+//     return (
+//       <div
+//         className="w-full rounded-xl bg-blue-50 border border-blue-100 flex flex-col items-center justify-center gap-2"
+//         style={{ aspectRatio: "1/1" }}
+//       >
+//         <FileText size={32} className="text-blue-500" />
+//         <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+//           Word Document
+//         </span>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div
+//       className="w-full rounded-xl bg-bg-main border border-border flex items-center justify-center"
+//       style={{ aspectRatio: "1/1" }}
+//     >
+//       <FileIcon fileName={file.name} size={36} />
+//     </div>
+//   );
+// };
+
 const FilePreview = ({ file }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +145,7 @@ const FilePreview = ({ file }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const mime = file.mime_type || "";
-  const isImage = mime.startsWith("image/");
+  const isImage = mime.startsWith("image/") && mime !== "image/svg+xml";
   const isPDF = mime === "application/pdf";
 
   useEffect(() => {
@@ -66,6 +183,7 @@ const FilePreview = ({ file }) => {
     };
   }, [isVisible, file.id]);
 
+  // --- Image preview (actual thumbnail) ---
   if (isImage) {
     return (
       <div
@@ -89,51 +207,104 @@ const FilePreview = ({ file }) => {
     );
   }
 
-  if (isPDF) {
-    return (
-      <div
-        ref={containerRef}
-        className="w-full rounded-xl overflow-hidden bg-red-50 flex items-center justify-center border border-red-100"
-        style={{ aspectRatio: "1/1" }}
-      >
-        {!isVisible || loading ? (
-          <div className="animate-spin h-5 w-5 border-2 border-red-400 border-t-transparent rounded-full" />
-        ) : previewUrl ? (
-          <iframe
-            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            className="w-full h-full pointer-events-none"
-            title={file.name}
-          />
-        ) : (
-          <FileIcon fileName={file.name} size={36} />
-        )}
-      </div>
-    );
-  }
+  // --- All other file types — show styled icon ---
+  const getIconStyle = (mime) => {
+    if (mime === "application/pdf")
+      return {
+        bg: "bg-red-50",
+        border: "border-red-100",
+        label: "PDF",
+        labelColor: "text-red-400",
+      };
+    if (
+      mime ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mime === "application/msword"
+    )
+      return {
+        bg: "bg-blue-50",
+        border: "border-blue-100",
+        label: "Word",
+        labelColor: "text-blue-400",
+      };
+    if (
+      mime ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      mime === "application/vnd.ms-excel"
+    )
+      return {
+        bg: "bg-green-50",
+        border: "border-green-100",
+        label: "Excel",
+        labelColor: "text-green-500",
+      };
+    if (
+      mime ===
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+      mime === "application/vnd.ms-powerpoint"
+    )
+      return {
+        bg: "bg-orange-50",
+        border: "border-orange-100",
+        label: "PowerPoint",
+        labelColor: "text-orange-400",
+      };
+    if (mime === "text/plain")
+      return {
+        bg: "bg-slate-50",
+        border: "border-slate-100",
+        label: "Text",
+        labelColor: "text-slate-400",
+      };
+    if (mime === "text/csv")
+      return {
+        bg: "bg-green-50",
+        border: "border-green-100",
+        label: "CSV",
+        labelColor: "text-green-500",
+      };
+    if (mime.startsWith("video/"))
+      return {
+        bg: "bg-violet-50",
+        border: "border-violet-100",
+        label: "Video",
+        labelColor: "text-violet-400",
+      };
+    if (mime.startsWith("audio/"))
+      return {
+        bg: "bg-emerald-50",
+        border: "border-emerald-100",
+        label: "Audio",
+        labelColor: "text-emerald-400",
+      };
+    if (mime === "image/svg+xml")
+      return {
+        bg: "bg-orange-50",
+        border: "border-orange-100",
+        label: "SVG",
+        labelColor: "text-orange-400",
+      };
+    return {
+      bg: "bg-bg-main",
+      border: "border-border",
+      label: "File",
+      labelColor: "text-text-secondary",
+    };
+  };
 
-  if (
-    mime ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ) {
-    return (
-      <div
-        className="w-full rounded-xl bg-blue-50 border border-blue-100 flex flex-col items-center justify-center gap-2"
-        style={{ aspectRatio: "1/1" }}
-      >
-        <FileText size={32} className="text-blue-500" />
-        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
-          Word Document
-        </span>
-      </div>
-    );
-  }
+  const style = getIconStyle(mime);
 
   return (
     <div
-      className="w-full rounded-xl bg-bg-main border border-border flex items-center justify-center"
+      className={`w-full rounded-xl ${style.bg} border ${style.border} flex flex-col items-center justify-center gap-2`}
       style={{ aspectRatio: "1/1" }}
     >
-      <FileIcon fileName={file.name} size={36} />
+      <FileIcon fileName={file.name} size={32} />
+      <span
+        className={`text-[10px] font-bold uppercase tracking-wider ${style.labelColor}`}
+      >
+        {style.label}
+      </span>
     </div>
   );
 };
@@ -343,7 +514,7 @@ const FileCard = ({
           <button
             onClick={handleStarToggle}
             disabled={isStarring}
-            className="absolute top-2 left-2 p-1.5 bg-surface/80 rounded-lg hover:bg-yellow-50 transition-colors"
+            className="absolute top-2 left-2 p-1.5 bg-surface/80 rounded-lg hover:bg-yellow-50 transition-colors opacity-100"
             title={isStarred ? "Remove from starred" : "Add to starred"}
             // Stop drag from firing when clicking star
             onPointerDown={(e) => e.stopPropagation()}
@@ -363,7 +534,7 @@ const FileCard = ({
             <Button
               variant="ghost"
               size="sm"
-              className="p-1 bg-surface/80 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+              className="p-1 bg-surface/80 rounded-lg opacity-100 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen((prev) => !prev);

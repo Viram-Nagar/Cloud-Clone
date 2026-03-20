@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -25,7 +26,9 @@ const Login = () => {
       await login(formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials provided");
+      const msg = err.response?.data?.message || "Invalid credentials provided";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

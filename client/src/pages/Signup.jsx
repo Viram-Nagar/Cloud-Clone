@@ -5,6 +5,7 @@ import API from "../api.jsx";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import { toast } from "react-toastify";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -26,11 +27,13 @@ const Signup = () => {
     setLoading(true);
     try {
       await API.post("/auth/register", formData);
+      toast.success("Account created! Please log in.");
       navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Try again.",
-      );
+      const msg =
+        err.response?.data?.message || "Registration failed. Try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -111,11 +112,13 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
         folderId: resource.type === "folder" ? resource.id : undefined,
       });
       setEmail("");
-      fetchShares(); // Refresh list
+      fetchShares();
+      toast.success("Invite sent successfully");
     } catch (err) {
-      setShareError(
-        err.response?.data?.message || "Failed to share. Check the email.",
-      );
+      const msg =
+        err.response?.data?.message || "Failed to share. Check the email.";
+      setShareError(msg);
+      toast.error(msg);
     } finally {
       setIsSharing(false);
     }
@@ -125,9 +128,11 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
   const handleRevoke = async (shareId) => {
     try {
       await API.delete(`/shares/${shareId}`);
-      fetchShares(); // Refresh list
+      fetchShares();
+      toast.success("Access revoked");
     } catch (err) {
       console.error("Revoke failed:", err);
+      toast.error("Failed to revoke access");
     }
   };
 
@@ -158,8 +163,10 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
       await navigator.clipboard.writeText(publicLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard");
     } catch {
       console.error("Copy failed");
+      toast.error("Failed to copy link");
     }
   };
 
