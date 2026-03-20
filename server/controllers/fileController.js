@@ -7,21 +7,38 @@ const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB Max
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB Max
   fileFilter: (req, file, cb) => {
     // Allowed Mime-Types: Images, PDF, and DOCX
     const allowedTypes = [
+      // Images
       "image/jpeg",
       "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+      // Documents
       "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+      "application/vnd.ms-excel", // xls
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // xlsx
+      "application/vnd.ms-powerpoint", // ppt
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+      "text/plain", // txt
+      "text/csv", // csv
+      // Video
+      "video/mp4",
+      "video/webm",
+      // Audio
+      "audio/mpeg", // mp3
+      "audio/wav",
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
       cb(
         new Error(
-          "Invalid file type. Only JPEG, PNG, PDF, and DOCX are allowed.",
+          "Invalid file type. Allowed: JPG, PNG, GIF, WEBP, SVG, PDF, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, MP4, WEBM, MP3, WAV",
         ),
         false,
       );

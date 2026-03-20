@@ -586,7 +586,7 @@ const Dashboard = () => {
                   </h3>
                   <motion.div
                     layout
-                    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
+                    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
                   >
                     <AnimatePresence mode="popLayout">
                       {sortedFolders.map((folder) => (
@@ -610,7 +610,7 @@ const Dashboard = () => {
                 {files.length > 0 ? (
                   <motion.div
                     layout
-                    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
+                    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
                   >
                     <AnimatePresence mode="popLayout">
                       {/* {sortedFiles.map((file) => (
