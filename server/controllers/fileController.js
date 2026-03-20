@@ -1185,8 +1185,8 @@ exports.searchFiles = async (req, res) => {
 exports.getDownloadUrl = async (req, res) => {
   try {
     const { id } = req.params;
+    const isActualDownload = req.query.download === "true"; // ← check param
 
-    // 1. Fetch the storage_key from the database
     const fileResult = await db.query(
       "SELECT storage_key, name FROM files WHERE id = $1",
       [id],
@@ -1198,19 +1198,19 @@ exports.getDownloadUrl = async (req, res) => {
 
     const { storage_key, name } = fileResult.rows[0];
 
-    // 2. Generate the Signed URL from Supabase
-    // expires_in is in seconds (15 minutes = 900 seconds)
     const { data, error } = await supabase.storage
       .from(process.env.SUPABASE_BUCKET)
       .createSignedUrl(storage_key, 900);
 
     if (error) throw error;
 
-    // 3. Log the download activity
-    await db.query(
-      "INSERT INTO activities (user_id, action, details) VALUES ($1, $2, $3)",
-      [req.user.id, "download", `Generated download link for ${name}`],
-    );
+    // Only log if it's a real download, not a preview fetch
+    if (isActualDownload) {
+      await db.query(
+        "INSERT INTO activities (user_id, action, details) VALUES ($1, $2, $3)",
+        [req.user.id, "download", `Downloaded ${name}`],
+      );
+    }
 
     res.status(200).json({
       message: "Secure URL generated",
@@ -1222,6 +1222,47 @@ exports.getDownloadUrl = async (req, res) => {
     res.status(500).json({ message: "Error generating download link" });
   }
 };
+
+// exports.getDownloadUrl = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     // 1. Fetch the storage_key from the database
+//     const fileResult = await db.query(
+//       "SELECT storage_key, name FROM files WHERE id = $1",
+//       [id],
+//     );
+
+//     if (fileResult.rows.length === 0) {
+//       return res.status(404).json({ message: "File not found" });
+//     }
+
+//     const { storage_key, name } = fileResult.rows[0];
+
+//     // 2. Generate the Signed URL from Supabase
+//     // expires_in is in seconds (15 minutes = 900 seconds)
+//     const { data, error } = await supabase.storage
+//       .from(process.env.SUPABASE_BUCKET)
+//       .createSignedUrl(storage_key, 900);
+
+//     if (error) throw error;
+
+//     // 3. Log the download activity
+//     await db.query(
+//       "INSERT INTO activities (user_id, action, details) VALUES ($1, $2, $3)",
+//       [req.user.id, "download", `Generated download link for ${name}`],
+//     );
+
+//     res.status(200).json({
+//       message: "Secure URL generated",
+//       downloadUrl: data.signedUrl,
+//       expiresIn: "15 minutes",
+//     });
+//   } catch (error) {
+//     console.error("Signed URL Error:", error);
+//     res.status(500).json({ message: "Error generating download link" });
+//   }
+// };
 
 exports.permanentDelete = async (req, res) => {
   try {

@@ -3,7 +3,7 @@ import API from "../api";
 
 const downloadFile = async (file) => {
   try {
-    const res = await API.get(`/files/${file.id}/download`);
+    const res = await API.get(`/files/${file.id}/download?download=true`);
     const url = res.data.downloadUrl;
 
     // Fetch the file as a blob (bypasses cross-origin restriction)
