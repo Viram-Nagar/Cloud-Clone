@@ -286,7 +286,7 @@ const SearchPage = () => {
             onFileAction={handleFileAction}
             currentFolderId={null}
             folderName="Search"
-            fullPath={[]}
+            fullPath={[{ id: null, name: "My Drive" }]}
           />
         ) : (
           <motion.div
@@ -301,6 +301,7 @@ const SearchPage = () => {
                   onAction={handleFileAction}
                   currentFolderId={file.folder_id ?? null}
                   folderName="Search"
+                  fullPath={[{ id: null, name: "My Drive" }]}
                 />
               ))}
             </AnimatePresence>

@@ -234,7 +234,7 @@ const Starred = () => {
             onNavigate={() => {}}
             currentFolderId={null}
             folderName="Starred"
-            fullPath={[]}
+            fullPath={[{ id: null, name: "My Drive" }]}
           />
         ) : (
           <div className="space-y-10">
@@ -283,6 +283,7 @@ const Starred = () => {
                         currentFolderId={file.folder_id ?? null}
                         folderName="Starred"
                         sharedRole={file.role ?? null}
+                        fullPath={[{ id: null, name: "My Drive" }]}
                         isShared={!!file.role}
                       />
                     ))}

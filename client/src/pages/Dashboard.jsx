@@ -54,7 +54,12 @@ const Dashboard = () => {
     const pathParam = searchParams.get("path");
     if (pathParam) {
       try {
-        return JSON.parse(decodeURIComponent(pathParam));
+        const parsed = JSON.parse(decodeURIComponent(pathParam));
+        // Validate — must be array with at least one item with a name
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.name) {
+          return parsed;
+        }
+        return [{ id: null, name: "My Drive" }];
       } catch {
         return [{ id: null, name: "My Drive" }];
       }

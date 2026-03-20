@@ -85,7 +85,7 @@ const FilePreviewPage = () => {
 
   // --- Back navigation ---
   const handleBack = () => {
-    if (folderId) {
+    if (folderId && folderId !== "") {
       navigate(
         `/dashboard?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}&path=${encodeURIComponent(pathParam)}`,
       );
