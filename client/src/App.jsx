@@ -1,4 +1,3 @@
-// ✅ FIXED App.jsx
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -18,12 +17,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import FilePreviewPage from "./pages/FilePreviewPage";
 
 const App = () => {
   const { loading, user } = useAuth();
 
-  // ✅ Show spinner INSIDE the Router, not before it
-  // Move the loading guard INSIDE Router so routes are always mounted
   return (
     <Router>
       <Routes>
@@ -50,6 +48,17 @@ const App = () => {
           <Route path="/starred" element={<Starred />} />
           <Route path="/trash" element={<Trash />} />
         </Route>
+
+        {/* FILE PREVIEW — full page, inside ProtectedRoute but outside MainLayout */}
+        <Route
+          path="/preview/:fileId"
+          element={
+            <ProtectedRoute>
+              <FilePreviewPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
@@ -58,6 +67,67 @@ const App = () => {
 };
 
 export default App;
+
+// // ✅ FIXED App.jsx
+// import React from "react";
+// import {
+//   BrowserRouter as Router,
+//   Routes,
+//   Route,
+//   Navigate,
+// } from "react-router-dom";
+// import Recent from "./pages/Recent";
+// import Starred from "./pages/Starred";
+// import Trash from "./pages/Trash";
+// import Search from "./pages/Search";
+// import SharedWithMe from "./pages/SharedWithMe";
+// import PublicShare from "./pages/PublicShare";
+// import MainLayout from "./layouts/MainLayout";
+// import { useAuth } from "./context/AuthContext";
+// import ProtectedRoute from "./components/ProtectedRoute";
+// import Login from "./pages/Login";
+// import Signup from "./pages/Signup";
+// import Dashboard from "./pages/Dashboard";
+
+// const App = () => {
+//   const { loading, user } = useAuth();
+
+//   // ✅ Show spinner INSIDE the Router, not before it
+//   // Move the loading guard INSIDE Router so routes are always mounted
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route
+//           path="/login"
+//           element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
+//         />
+//         <Route path="/signup" element={<Signup />} />
+
+//         {/* PUBLIC SHARE — no login needed */}
+//         <Route path="/share/:token" element={<PublicShare />} />
+
+//         <Route
+//           element={
+//             <ProtectedRoute>
+//               <MainLayout />
+//             </ProtectedRoute>
+//           }
+//         >
+//           <Route path="/dashboard" element={<Dashboard />} />
+//           <Route path="/shared" element={<SharedWithMe />} />
+//           <Route path="/search" element={<Search />} />
+//           <Route path="/recent" element={<Recent />} />
+//           <Route path="/starred" element={<Starred />} />
+//           <Route path="/trash" element={<Trash />} />
+//         </Route>
+//         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+//         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+//       </Routes>
+//     </Router>
+//   );
+// };
+
+// export default App;
 
 // import React from "react";
 // import {

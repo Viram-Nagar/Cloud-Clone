@@ -8,14 +8,14 @@ import API from "../api.jsx";
 import downloadFile from "../util/DownloadFile.jsx";
 import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
-import FilePreviewModal from "../components/ui/FilePreviewModal";
+
 import ShareModal from "../components/ui/ShareModal";
 import VersionModal from "../components/ui/VersionModal";
 
 const Starred = () => {
   const [starredItems, setStarredItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [previewFile, setPreviewFile] = useState(null);
+
   const [shareTarget, setShareTarget] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
@@ -108,6 +108,31 @@ const Starred = () => {
   const files = starredItems.filter((i) => i.type === "file");
   const folders = starredItems.filter((i) => i.type === "folder");
 
+  // const handleRename = async (e) => {
+  //   e.preventDefault();
+  //   if (!newName.trim()) return;
+  //   setIsRenaming(true);
+  //   try {
+  //     if (renameTarget.type === "folder") {
+  //       await API.patch(`/files/folders/${renameTarget.id}`, {
+  //         newName: newName.trim(),
+  //       });
+  //     } else {
+  //       await API.patch(`/files/${renameTarget.id}`, {
+  //         newName: newName.trim(),
+  //       });
+  //     }
+  //     setIsRenameModalOpen(false);
+  //     setRenameTarget(null);
+  //     setNewName("");
+  //     fetchStarredItems();
+  //   } catch (err) {
+  //     console.error("Rename failed:", err);
+  //   } finally {
+  //     setIsRenaming(false);
+  //   }
+  // };
+
   const handleRename = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -118,9 +143,18 @@ const Starred = () => {
           newName: newName.trim(),
         });
       } else {
-        await API.patch(`/files/${renameTarget.id}`, {
-          newName: newName.trim(),
-        });
+        // Try owner rename first, fall back to shared rename
+        try {
+          await API.patch(`/files/${renameTarget.id}`, {
+            newName: newName.trim(),
+          });
+        } catch (err) {
+          if (err.response?.status === 404) {
+            await API.patch(`/files/shared/${renameTarget.id}/rename`, {
+              newName: newName.trim(),
+            });
+          } else throw err;
+        }
       }
       setIsRenameModalOpen(false);
       setRenameTarget(null);
@@ -220,9 +254,11 @@ const Starred = () => {
                     <FileCard
                       key={file.id}
                       file={file}
-                      onPreview={(f) => setPreviewFile(f)}
                       onAction={handleFileAction}
                       onStarToggle={() => handleUnstar(file)}
+                      currentFolderId={file.folder_id ?? null}
+                      folderName="Starred"
+                      sharedRole={file.role ?? null}
                     />
                   ))}
                 </AnimatePresence>
@@ -231,13 +267,6 @@ const Starred = () => {
           )}
         </div>
       )}
-
-      {/* FILE PREVIEW MODAL */}
-      <FilePreviewModal
-        file={previewFile}
-        isOpen={!!previewFile}
-        onClose={() => setPreviewFile(null)}
-      />
 
       {/* SHARE MODAL */}
       <ShareModal

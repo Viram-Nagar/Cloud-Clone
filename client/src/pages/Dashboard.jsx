@@ -7,7 +7,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import FilePreviewModal from "../components/ui/FilePreviewModal";
 import React, { useState, useEffect } from "react";
 import API from "../api.jsx";
 import UploadZone from "../components/ui/UploadZone";
@@ -21,6 +20,7 @@ import downloadFile from "../util/DownloadFile.jsx";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Folder, Upload, Grid, List as ListIcon, Plus } from "lucide-react";
 const Dashboard = () => {
@@ -29,7 +29,6 @@ const Dashboard = () => {
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
 
   // Rename Modal State
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -38,8 +37,23 @@ const Dashboard = () => {
   const [isRenaming, setIsRenaming] = useState(false);
 
   // Navigation State
-  const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [path, setPath] = useState([{ id: null, name: "My Drive" }]);
+  const [searchParams] = useSearchParams();
+
+  const [currentFolderId, setCurrentFolderId] = useState(
+    searchParams.get("folderId") || null,
+  );
+
+  const [path, setPath] = useState(() => {
+    const pathParam = searchParams.get("path");
+    if (pathParam) {
+      try {
+        return JSON.parse(decodeURIComponent(pathParam));
+      } catch {
+        return [{ id: null, name: "My Drive" }];
+      }
+    }
+    return [{ id: null, name: "My Drive" }];
+  });
 
   // Create Folder Modal State
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -599,12 +613,24 @@ const Dashboard = () => {
                     className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
                   >
                     <AnimatePresence mode="popLayout">
+                      {/* {sortedFiles.map((file) => (
+                        <FileCard
+                          key={file.id}
+                          file={file}
+                          onAction={handleFileAction}
+                          currentFolderId={currentFolderId}
+                          folderName={path[path.length - 1].name}
+                        />
+                      ))} */}
+
                       {sortedFiles.map((file) => (
                         <FileCard
                           key={file.id}
                           file={file}
                           onAction={handleFileAction}
-                          onPreview={(f) => setPreviewFile(f)}
+                          currentFolderId={currentFolderId}
+                          folderName={path[path.length - 1].name}
+                          fullPath={path}
                         />
                       ))}
                     </AnimatePresence>
@@ -718,13 +744,6 @@ const Dashboard = () => {
               </div>
             </form>
           </Modal>
-
-          {/* G. FILE PREVIEW MODAL */}
-          <FilePreviewModal
-            file={previewFile}
-            isOpen={!!previewFile}
-            onClose={() => setPreviewFile(null)}
-          />
 
           <ShareModal
             isOpen={isShareModalOpen}

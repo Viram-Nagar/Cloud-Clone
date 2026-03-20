@@ -9,6 +9,7 @@ const { checkPermission } = require("../middleware/permission");
 
 // 1. Get all files (optionally filtered by folderId)
 router.get("/shared-with-me", protect, fileController.getSharedWithMe);
+router.patch("/shared/:id/rename", protect, fileController.renameSharedFile);
 
 router.get("/", protect, fileController.getFiles);
 

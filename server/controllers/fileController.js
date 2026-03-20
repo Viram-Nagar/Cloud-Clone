@@ -1560,15 +1560,84 @@ exports.toggleStar = async (req, res) => {
   }
 };
 
+// exports.getStarredItems = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const query = `
+//       SELECT f.id, f.name, 'file' as type, f.size_bytes, f.mime_type, f.updated_at, true as is_starred
+//       FROM files f JOIN stars s ON f.id = s.file_id WHERE s.user_id = $1 AND f.is_deleted = false
+//       UNION ALL
+//       SELECT fo.id, fo.name, 'folder' as type, 0 as size_bytes, 'folder' as mime_type, fo.updated_at, true as is_starred
+//       FROM folders fo JOIN stars s ON fo.id = s.folder_id WHERE s.user_id = $1 AND fo.is_deleted = false
+//     `;
+//     const result = await db.query(query, [userId]);
+//     res.status(200).json({ starredItems: result.rows });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+// exports.getSharedWithMe = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     const result = await db.query(
+//       `SELECT
+//         f.id, f.name, f.mime_type, f.size_bytes, f.updated_at,
+//         s.role,
+//         u.name as shared_by_name,
+//         u.email as shared_by_email,
+//         'file' as type
+//        FROM shares s
+//        JOIN files f ON s.file_id = f.id
+//        JOIN users u ON s.created_by = u.id
+//        WHERE s.grantee_id = $1
+//        AND f.is_deleted = false
+
+//        UNION ALL
+
+//        SELECT
+//         fo.id, fo.name, 'folder' as mime_type, 0 as size_bytes, fo.updated_at,
+//         s.role,
+//         u.name as shared_by_name,
+//         u.email as shared_by_email,
+//         'folder' as type
+//        FROM shares s
+//        JOIN folders fo ON s.folder_id = fo.id
+//        JOIN users u ON s.created_by = u.id
+//        WHERE s.grantee_id = $1
+//        AND fo.is_deleted = false
+
+//        ORDER BY updated_at DESC`,
+//       [userId],
+//     );
+
+//     res.status(200).json({ sharedItems: result.rows });
+//   } catch (error) {
+//     console.error("Shared With Me Error:", error);
+//     res.status(500).json({ message: "Error fetching shared items" });
+//   }
+// };
+
 exports.getStarredItems = async (req, res) => {
   try {
     const userId = req.user.id;
     const query = `
-      SELECT f.id, f.name, 'file' as type, f.size_bytes, f.mime_type, f.updated_at, true as is_starred 
-      FROM files f JOIN stars s ON f.id = s.file_id WHERE s.user_id = $1 AND f.is_deleted = false
+      SELECT f.id, f.name, 'file' as type, f.size_bytes, f.mime_type, 
+             f.updated_at, f.folder_id, true as is_starred,
+             sh.role
+      FROM files f 
+      JOIN stars s ON f.id = s.file_id 
+      LEFT JOIN shares sh ON sh.file_id = f.id AND sh.grantee_id = $1
+      WHERE s.user_id = $1 AND f.is_deleted = false
       UNION ALL
-      SELECT fo.id, fo.name, 'folder' as type, 0 as size_bytes, 'folder' as mime_type, fo.updated_at, true as is_starred 
-      FROM folders fo JOIN stars s ON fo.id = s.folder_id WHERE s.user_id = $1 AND fo.is_deleted = false
+      SELECT fo.id, fo.name, 'folder' as type, 0 as size_bytes, 
+             'folder' as mime_type, fo.updated_at, fo.parent_id as folder_id,
+             true as is_starred, sh.role
+      FROM folders fo 
+      JOIN stars s ON fo.id = s.folder_id 
+      LEFT JOIN shares sh ON sh.folder_id = fo.id AND sh.grantee_id = $1
+      WHERE s.user_id = $1 AND fo.is_deleted = false
     `;
     const result = await db.query(query, [userId]);
     res.status(200).json({ starredItems: result.rows });
@@ -1587,10 +1656,12 @@ exports.getSharedWithMe = async (req, res) => {
         s.role,
         u.name as shared_by_name,
         u.email as shared_by_email,
-        'file' as type
+        'file' as type,
+        CASE WHEN st.file_id IS NOT NULL THEN true ELSE false END as is_starred
        FROM shares s
        JOIN files f ON s.file_id = f.id
        JOIN users u ON s.created_by = u.id
+       LEFT JOIN stars st ON st.file_id = f.id AND st.user_id = $1
        WHERE s.grantee_id = $1
        AND f.is_deleted = false
 
@@ -1601,10 +1672,12 @@ exports.getSharedWithMe = async (req, res) => {
         s.role,
         u.name as shared_by_name,
         u.email as shared_by_email,
-        'folder' as type
+        'folder' as type,
+        CASE WHEN st.folder_id IS NOT NULL THEN true ELSE false END as is_starred
        FROM shares s
        JOIN folders fo ON s.folder_id = fo.id
        JOIN users u ON s.created_by = u.id
+       LEFT JOIN stars st ON st.folder_id = fo.id AND st.user_id = $1
        WHERE s.grantee_id = $1
        AND fo.is_deleted = false
 
@@ -1646,6 +1719,39 @@ exports.getVersions = async (req, res) => {
   } catch (error) {
     console.error("Get Versions Error:", error);
     res.status(500).json({ message: "Error fetching versions" });
+  }
+};
+
+exports.renameSharedFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newName } = req.body;
+    const userId = req.user.id;
+
+    // Check if user has editor permission on this file
+    const permCheck = await db.query(
+      `SELECT s.role FROM shares s 
+       WHERE s.file_id = $1 AND s.grantee_id = $2 AND s.role = 'editor'`,
+      [id, userId],
+    );
+
+    if (permCheck.rows.length === 0) {
+      return res.status(403).json({ message: "No editor permission" });
+    }
+
+    const result = await db.query(
+      "UPDATE files SET name = $1, updated_at = now() WHERE id = $2 RETURNING *",
+      [newName.trim(), id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Rename Shared File Error:", error);
+    res.status(500).json({ message: "Error renaming file" });
   }
 };
 

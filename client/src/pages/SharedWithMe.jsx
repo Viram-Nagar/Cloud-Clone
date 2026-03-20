@@ -6,10 +6,25 @@ import FilePreviewModal from "../components/ui/FilePreviewModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users } from "lucide-react";
 
+import downloadFile from "../util/DownloadFile.jsx";
+import Modal from "../components/ui/Modal";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import ShareModal from "../components/ui/ShareModal";
+
+// States:
+
 const SharedWithMe = () => {
   const [sharedItems, setSharedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
+
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState(null);
 
   useEffect(() => {
     fetchSharedItems();
@@ -29,6 +44,56 @@ const SharedWithMe = () => {
 
   const files = sharedItems.filter((i) => i.type === "file");
   const folders = sharedItems.filter((i) => i.type === "folder");
+
+  const handleFileAction = async (file, action) => {
+    if (action === "download") {
+      await downloadFile(file);
+    }
+    if (action === "rename") {
+      setRenameTarget({ ...file, type: "file" });
+      setNewName(file.name);
+      setIsRenameModalOpen(true);
+    }
+    if (action === "share") {
+      setShareTarget({ id: file.id, name: file.name, type: "file" });
+      setIsShareModalOpen(true);
+    }
+    if (action === "delete") {
+      try {
+        await API.delete(`/files/${file.id}`);
+        fetchSharedItems();
+      } catch (err) {
+        console.error("Delete failed:", err);
+      }
+    }
+  };
+
+  const handleRename = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setIsRenaming(true);
+    try {
+      try {
+        await API.patch(`/files/${renameTarget.id}`, {
+          newName: newName.trim(),
+        });
+      } catch (err) {
+        if (err.response?.status === 404) {
+          await API.patch(`/files/shared/${renameTarget.id}/rename`, {
+            newName: newName.trim(),
+          });
+        } else throw err;
+      }
+      setIsRenameModalOpen(false);
+      setRenameTarget(null);
+      setNewName("");
+      fetchSharedItems();
+    } catch (err) {
+      console.error("Rename failed:", err);
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -122,8 +187,10 @@ const SharedWithMe = () => {
                     <div key={file.id} className="space-y-1">
                       <FileCard
                         file={file}
-                        onPreview={(f) => setPreviewFile(f)}
-                        onAction={() => {}}
+                        onAction={handleFileAction}
+                        sharedRole={file.role}
+                        currentFolderId={file.folder_id ?? null}
+                        folderName="Shared with me"
                       />
                       {/* Shared by badge */}
                       <p className="text-[10px] text-text-secondary px-1 truncate">
@@ -149,6 +216,57 @@ const SharedWithMe = () => {
         isOpen={!!previewFile}
         onClose={() => setPreviewFile(null)}
       />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setShareTarget(null);
+        }}
+        resource={shareTarget}
+      />
+
+      <Modal
+        isOpen={isRenameModalOpen}
+        onClose={() => {
+          setIsRenameModalOpen(false);
+          setRenameTarget(null);
+          setNewName("");
+        }}
+        title="Rename File"
+      >
+        <form onSubmit={handleRename} className="space-y-6">
+          <Input
+            label="New Name"
+            placeholder={renameTarget?.name}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            autoFocus
+            required
+          />
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => {
+                setIsRenameModalOpen(false);
+                setRenameTarget(null);
+                setNewName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              isLoading={isRenaming}
+              loadingText="Renaming..."
+            >
+              Rename
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

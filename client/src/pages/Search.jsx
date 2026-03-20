@@ -5,7 +5,7 @@ import { Search, FileX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../api.jsx";
 import FileCard from "../components/ui/FileCard";
-import FilePreviewModal from "../components/ui/FilePreviewModal";
+
 import ShareModal from "../components/ui/ShareModal";
 import VersionModal from "../components/ui/VersionModal";
 
@@ -16,7 +16,7 @@ const SearchPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [previewFile, setPreviewFile] = useState(null);
+
   const [shareTarget, setShareTarget] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -200,8 +200,9 @@ const SearchPage = () => {
               <FileCard
                 key={file.id}
                 file={file}
-                onPreview={(f) => setPreviewFile(f)}
                 onAction={handleFileAction}
+                currentFolderId={file.folder_id ?? null}
+                folderName="Search"
               />
             ))}
           </AnimatePresence>
@@ -209,11 +210,6 @@ const SearchPage = () => {
       )}
 
       {/* H. FILE PREVIEW MODAL */}
-      <FilePreviewModal
-        file={previewFile}
-        isOpen={!!previewFile}
-        onClose={() => setPreviewFile(null)}
-      />
 
       {/* I. SHARE MODAL */}
       <ShareModal

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MoreVertical,
   Star,
@@ -138,12 +139,21 @@ const FilePreview = ({ file }) => {
 };
 
 // --- Main FileCard ---
-const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
+const FileCard = ({
+  file,
+  onAction,
+  onStarToggle,
+  currentFolderId,
+  folderName,
+  fullPath,
+  sharedRole, // 'viewer' | 'editor' | null (null = owner)
+}) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isStarred, setIsStarred] = useState(file.is_starred || false);
   const [isStarring, setIsStarring] = useState(false);
+  const navigate = useNavigate();
 
   // Sync star state when file prop changes (e.g. after navigation)
   useEffect(() => {
@@ -204,35 +214,80 @@ const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
     }
   };
 
-  const menuItems = [
+  // const menuItems = [
+  //   {
+  //     label: "Download",
+  //     icon: Download,
+  //     onClick: () => onAction?.(file, "download"),
+  //   },
+  //   {
+  //     label: "Update File",
+  //     icon: RefreshCw,
+  //     onClick: () => fileInputRef.current?.click(),
+  //   },
+  //   {
+  //     label: "Version History",
+  //     icon: History,
+  //     onClick: () => onAction?.(file, "versions"),
+  //   },
+  //   {
+  //     label: "Rename",
+  //     icon: Pencil,
+  //     onClick: () => onAction?.(file, "rename"),
+  //   },
+  //   { label: "Share", icon: Share2, onClick: () => onAction?.(file, "share") },
+  //   {
+  //     label: "Delete",
+  //     icon: Trash2,
+  //     onClick: () => onAction?.(file, "delete"),
+  //     variant: "danger",
+  //   },
+  // ];
+
+  const allMenuItems = [
     {
       label: "Download",
       icon: Download,
       onClick: () => onAction?.(file, "download"),
+      showFor: ["owner", "viewer", "editor"],
     },
     {
       label: "Update File",
       icon: RefreshCw,
       onClick: () => fileInputRef.current?.click(),
+      showFor: ["owner"],
     },
     {
       label: "Version History",
       icon: History,
       onClick: () => onAction?.(file, "versions"),
+      showFor: ["owner"],
     },
     {
       label: "Rename",
       icon: Pencil,
       onClick: () => onAction?.(file, "rename"),
+      showFor: ["owner", "editor"],
     },
-    { label: "Share", icon: Share2, onClick: () => onAction?.(file, "share") },
+    {
+      label: "Share",
+      icon: Share2,
+      onClick: () => onAction?.(file, "share"),
+      showFor: ["owner", "viewer", "editor"],
+    },
     {
       label: "Delete",
       icon: Trash2,
       onClick: () => onAction?.(file, "delete"),
       variant: "danger",
+      showFor: ["owner", "viewer", "editor"],
     },
   ];
+
+  const userRole = sharedRole || "owner";
+  const menuItems = allMenuItems.filter((item) =>
+    item.showFor.includes(userRole),
+  );
 
   return (
     <motion.div
@@ -246,7 +301,13 @@ const FileCard = ({ file, onAction, onPreview, onStarToggle }) => {
       className="relative"
       // --- Click opens preview ONLY if not dragging ---
       onClick={() => {
-        if (!isDragging) onPreview?.(file);
+        if (!isDragging) {
+          console.log("fullPath being sent:", fullPath);
+
+          navigate(
+            `/preview/${file.id}?folderId=${currentFolderId ?? ""}&folderName=${encodeURIComponent(folderName ?? "My Drive")}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mime_type || "")}&sizeBytes=${file.size_bytes || 0}&path=${encodeURIComponent(JSON.stringify(fullPath ?? []))}`,
+          );
+        }
       }}
     >
       {/* Hidden file input */}
