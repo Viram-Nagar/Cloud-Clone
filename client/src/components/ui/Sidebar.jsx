@@ -95,8 +95,6 @@ const Sidebar = ({ isMobile, onClose }) => {
         <NavItem to="/trash" icon={Trash2} label="Trash" />
 
         <Divider className="my-6 opacity-50" />
-
-        <NavItem to="/settings" icon={Settings} label="Settings" />
       </nav>
 
       {/* 3. Storage indicator — DYNAMIC */}

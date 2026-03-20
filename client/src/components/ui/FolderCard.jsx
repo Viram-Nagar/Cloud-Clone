@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Folder, MoreVertical, Pencil, Trash2, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
@@ -12,6 +12,11 @@ const FolderCard = ({ folder, onNavigate, onAction, onStarToggle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isStarred, setIsStarred] = useState(folder.is_starred || false);
   const [isStarring, setIsStarring] = useState(false);
+
+  // Sync star state when folder prop changes
+  useEffect(() => {
+    setIsStarred(folder.is_starred || false);
+  }, [folder.is_starred]);
 
   // --- Draggable setup (folder can be dragged into other folders) ---
   const {

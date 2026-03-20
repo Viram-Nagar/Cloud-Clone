@@ -109,23 +109,39 @@ exports.getFolders = async (req, res) => {
 
     if (parentId && parentId !== "null") {
       // Fetch sub-folders
+
       queryText = `
-        SELECT * FROM folders 
-        WHERE owner_id = $1 
-        AND parent_id = $2 
-        AND is_deleted = false 
-        ORDER BY name ASC
-      `;
+  SELECT f.*,
+    CASE WHEN s.folder_id IS NOT NULL THEN true ELSE false END as is_starred
+  FROM folders f
+  LEFT JOIN stars s ON s.folder_id = f.id AND s.user_id = $1
+  WHERE f.owner_id = $1
+  AND f.parent_id = $2
+  AND f.is_deleted = false
+  ORDER BY f.name ASC
+`;
       queryParams = [userId, parentId];
+
+      // queryText = `
+      //   SELECT * FROM folders
+      //   WHERE owner_id = $1
+      //   AND parent_id = $2
+      //   AND is_deleted = false
+      //   ORDER BY name ASC
+      // `;
+      // queryParams = [userId, parentId];
     } else {
       // Fetch root folders
       queryText = `
-        SELECT * FROM folders 
-        WHERE owner_id = $1 
-        AND parent_id IS NULL 
-        AND is_deleted = false 
-        ORDER BY name ASC
-      `;
+  SELECT f.*,
+    CASE WHEN s.folder_id IS NOT NULL THEN true ELSE false END as is_starred
+  FROM folders f
+  LEFT JOIN stars s ON s.folder_id = f.id AND s.user_id = $1
+  WHERE f.owner_id = $1
+  AND f.parent_id IS NULL
+  AND f.is_deleted = false
+  ORDER BY f.name ASC
+`;
       queryParams = [userId];
     }
 
