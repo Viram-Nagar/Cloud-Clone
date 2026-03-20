@@ -1755,6 +1755,56 @@ exports.renameSharedFile = async (req, res) => {
   }
 };
 
+exports.trackFileOpen = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Insert open record
+    await db.query(
+      "INSERT INTO file_opens (user_id, file_id) VALUES ($1, $2)",
+      [userId, id],
+    );
+
+    res.status(200).json({ message: "File open tracked" });
+  } catch (error) {
+    console.error("Track File Open Error:", error);
+    res.status(500).json({ message: "Error tracking file open" });
+  }
+};
+
+exports.getRecentFiles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { limit = 20 } = req.query;
+
+    const result = await db.query(
+      `SELECT DISTINCT ON (f.id)
+        f.id, f.name, f.mime_type, f.size_bytes, f.folder_id,
+        fo.opened_at as last_opened,
+        CASE WHEN s.file_id IS NOT NULL THEN true ELSE false END as is_starred
+       FROM file_opens fo
+       JOIN files f ON fo.file_id = f.id
+       LEFT JOIN stars s ON s.file_id = f.id AND s.user_id = $1
+       WHERE fo.user_id = $1
+       AND f.is_deleted = false
+       ORDER BY f.id, fo.opened_at DESC
+       LIMIT $2`,
+      [userId, parseInt(limit)],
+    );
+
+    // Sort by last_opened after DISTINCT
+    const sorted = result.rows.sort(
+      (a, b) => new Date(b.last_opened) - new Date(a.last_opened),
+    );
+
+    res.status(200).json({ files: sorted });
+  } catch (error) {
+    console.error("Get Recent Files Error:", error);
+    res.status(500).json({ message: "Error fetching recent files" });
+  }
+};
+
 // const db = require("../db"); // Your high-performance PostgreSQL pool
 // const { v4: uuidv4 } = require("uuid"); // Install this: npm install uuid
 // const supabase = require("../config/supabaseClient");

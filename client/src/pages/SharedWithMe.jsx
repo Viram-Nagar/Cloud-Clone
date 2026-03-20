@@ -189,6 +189,7 @@ const SharedWithMe = () => {
                         file={file}
                         onAction={handleFileAction}
                         sharedRole={file.role}
+                        isShared={true}
                         currentFolderId={file.folder_id ?? null}
                         folderName="Shared with me"
                       />

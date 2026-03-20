@@ -146,7 +146,8 @@ const FileCard = ({
   currentFolderId,
   folderName,
   fullPath,
-  sharedRole, // 'viewer' | 'editor' | null (null = owner)
+  sharedRole,
+  isShared,
 }) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -273,14 +274,14 @@ const FileCard = ({
       label: "Share",
       icon: Share2,
       onClick: () => onAction?.(file, "share"),
-      showFor: ["owner", "viewer", "editor"],
+      showFor: ["owner"],
     },
     {
       label: "Delete",
       icon: Trash2,
       onClick: () => onAction?.(file, "delete"),
       variant: "danger",
-      showFor: ["owner", "viewer", "editor"],
+      showFor: ["owner"],
     },
   ];
 

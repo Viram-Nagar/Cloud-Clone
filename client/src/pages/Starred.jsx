@@ -259,6 +259,7 @@ const Starred = () => {
                       currentFolderId={file.folder_id ?? null}
                       folderName="Starred"
                       sharedRole={file.role ?? null}
+                      isShared={!!file.role}
                     />
                   ))}
                 </AnimatePresence>

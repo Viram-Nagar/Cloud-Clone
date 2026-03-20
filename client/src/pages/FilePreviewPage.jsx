@@ -27,23 +27,50 @@ const FilePreviewPage = () => {
   const [error, setError] = useState("");
 
   // --- Fetch file info + signed URL ---
+  // useEffect(() => {
+  //   const fetchFile = async () => {
+  //     setLoading(true);
+  //     setError("");
+  //     try {
+  //       // Get signed URL
+  //       const res = await API.get(`/files/${fileId}/download`);
+  //       setPreviewUrl(res.data.downloadUrl);
+
+  //       // Get file metadata — from the download response or separately
+  //       // We store basic info in the URL as query params
+  //       setFile({
+  //         id: fileId,
+  //         name: searchParams.get("fileName") || "File",
+  //         mime_type: searchParams.get("mimeType") || "",
+  //         size_bytes: searchParams.get("sizeBytes") || 0,
+  //       });
+  //     } catch (err) {
+  //       console.error("Preview fetch failed:", err);
+  //       setError("Failed to load file. Please try again.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchFile();
+  // }, [fileId]);
+
   useEffect(() => {
     const fetchFile = async () => {
       setLoading(true);
       setError("");
       try {
-        // Get signed URL
         const res = await API.get(`/files/${fileId}/download`);
         setPreviewUrl(res.data.downloadUrl);
-
-        // Get file metadata — from the download response or separately
-        // We store basic info in the URL as query params
         setFile({
           id: fileId,
           name: searchParams.get("fileName") || "File",
           mime_type: searchParams.get("mimeType") || "",
           size_bytes: searchParams.get("sizeBytes") || 0,
         });
+
+        // Track file open — fire and forget
+        API.post(`/files/${fileId}/open`).catch(() => {});
       } catch (err) {
         console.error("Preview fetch failed:", err);
         setError("Failed to load file. Please try again.");
@@ -51,7 +78,6 @@ const FilePreviewPage = () => {
         setLoading(false);
       }
     };
-
     fetchFile();
   }, [fileId]);
 
