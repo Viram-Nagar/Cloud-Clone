@@ -1,3 +1,6 @@
+import Modal from "../components/ui/Modal";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +20,10 @@ const Starred = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versionTarget, setVersionTarget] = useState(null);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
   useEffect(() => {
     fetchStarredItems();
   }, []);
@@ -68,7 +75,9 @@ const Starred = () => {
     }
 
     if (action === "rename") {
-      fetchStarredItems();
+      setRenameTarget({ ...file, type: "file" });
+      setNewName(file.name);
+      setIsRenameModalOpen(true);
     }
 
     // Add to handleFileAction in SearchPage.jsx and Starred.jsx
@@ -90,12 +99,39 @@ const Starred = () => {
     }
 
     if (action === "rename") {
-      fetchStarredItems();
+      setRenameTarget({ ...folder, type: "folder" });
+      setNewName(folder.name);
+      setIsRenameModalOpen(true);
     }
   };
 
   const files = starredItems.filter((i) => i.type === "file");
   const folders = starredItems.filter((i) => i.type === "folder");
+
+  const handleRename = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setIsRenaming(true);
+    try {
+      if (renameTarget.type === "folder") {
+        await API.patch(`/files/folders/${renameTarget.id}`, {
+          newName: newName.trim(),
+        });
+      } else {
+        await API.patch(`/files/${renameTarget.id}`, {
+          newName: newName.trim(),
+        });
+      }
+      setIsRenameModalOpen(false);
+      setRenameTarget(null);
+      setNewName("");
+      fetchStarredItems();
+    } catch (err) {
+      console.error("Rename failed:", err);
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -221,6 +257,49 @@ const Starred = () => {
         }}
         file={versionTarget}
       />
+
+      {/* RENAME MODAL */}
+      <Modal
+        isOpen={isRenameModalOpen}
+        onClose={() => {
+          setIsRenameModalOpen(false);
+          setRenameTarget(null);
+          setNewName("");
+        }}
+        title={`Rename ${renameTarget?.type === "folder" ? "Folder" : "File"}`}
+      >
+        <form onSubmit={handleRename} className="space-y-6">
+          <Input
+            label="New Name"
+            placeholder={renameTarget?.name}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            autoFocus
+            required
+          />
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => {
+                setIsRenameModalOpen(false);
+                setRenameTarget(null);
+                setNewName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              isLoading={isRenaming}
+              loadingText="Renaming..."
+            >
+              Rename
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

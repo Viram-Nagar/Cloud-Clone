@@ -609,11 +609,12 @@ const Dashboard = () => {
                       ))}
                     </AnimatePresence>
                   </motion.div>
-                ) : (
+                ) : // Only show "no files" if there ARE folders (folder-only view)
+                folders.length > 0 ? (
                   <div className="text-center py-12 text-text-secondary">
                     No files in this folder.
                   </div>
-                )}
+                ) : null}
 
                 {files.length === 0 && folders.length === 0 && (
                   <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">

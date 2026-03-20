@@ -1057,15 +1057,28 @@ exports.searchFiles = async (req, res) => {
     const formattedQuery = query.trim().split(/\s+/).join(" & ") + ":*";
 
     const sqlQuery = `
-      SELECT id, name, mime_type, size_bytes, folder_id, updated_at,
-             ts_rank(search_vector, to_tsquery('english', $2)) as rank
-      FROM files
-      WHERE owner_id = $1 
-      AND is_deleted = false
-      AND search_vector @@ to_tsquery('english', $2)
-      ORDER BY rank DESC
-      LIMIT $3 OFFSET $4;
-    `;
+  SELECT f.id, f.name, f.mime_type, f.size_bytes, f.folder_id, f.updated_at,
+         ts_rank(f.search_vector, to_tsquery('english', $2)) as rank,
+         CASE WHEN s.file_id IS NOT NULL THEN true ELSE false END as is_starred
+  FROM files f
+  LEFT JOIN stars s ON s.file_id = f.id AND s.user_id = $1
+  WHERE f.owner_id = $1 
+  AND f.is_deleted = false
+  AND f.search_vector @@ to_tsquery('english', $2)
+  ORDER BY rank DESC
+  LIMIT $3 OFFSET $4;
+`;
+
+    // const sqlQuery = `
+    //   SELECT id, name, mime_type, size_bytes, folder_id, updated_at,
+    //          ts_rank(search_vector, to_tsquery('english', $2)) as rank
+    //   FROM files
+    //   WHERE owner_id = $1
+    //   AND is_deleted = false
+    //   AND search_vector @@ to_tsquery('english', $2)
+    //   ORDER BY rank DESC
+    //   LIMIT $3 OFFSET $4;
+    // `;
 
     const result = await db.query(sqlQuery, [
       userId,
