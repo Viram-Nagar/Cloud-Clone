@@ -73,7 +73,26 @@ const Starred = () => {
   };
 
   // --- Unstar handler ---
+  // const handleUnstar = async (item) => {
+  //   try {
+  //     await API.post("/files/stars/toggle", {
+  //       fileId: item.type === "file" ? item.id : undefined,
+  //       folderId: item.type === "folder" ? item.id : undefined,
+  //     });
+  //     // Remove from list immediately (optimistic update)
+  //     setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
+  //   } catch (err) {
+  //     console.error("Unstar failed:", err);
+  //   }
+  // };
+
   const handleUnstar = async (item) => {
+    // item may be undefined if called from FileCard/FolderCard callback
+    // In that case we just refresh the list
+    if (!item) {
+      fetchStarredItems();
+      return;
+    }
     try {
       await API.post("/files/stars/toggle", {
         fileId: item.type === "file" ? item.id : undefined,
