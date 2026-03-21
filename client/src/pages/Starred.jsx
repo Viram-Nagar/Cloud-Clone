@@ -154,18 +154,23 @@ const Starred = () => {
   //   }
   // };
 
+  // const handleUnstar = (item) => {
+  //   console.log("handleUnstar called, item:", item?.id, item?.name);
+  //   if (!item) {
+  //     console.log("item is undefined!");
+  //     return;
+  //   }
+  //   setStarredItems((prev) => {
+  //     console.log("before filter length:", prev.length);
+  //     const result = prev.filter((i) => i.id !== item.id);
+  //     console.log("after filter length:", result.length);
+  //     return result;
+  //   });
+  // };
+
   const handleUnstar = (item) => {
-    console.log("handleUnstar called, item:", item?.id, item?.name);
-    if (!item) {
-      console.log("item is undefined!");
-      return;
-    }
-    setStarredItems((prev) => {
-      console.log("before filter length:", prev.length);
-      const result = prev.filter((i) => i.id !== item.id);
-      console.log("after filter length:", result.length);
-      return result;
-    });
+    if (!item) return;
+    setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
   };
 
   // --- File actions ---
@@ -339,12 +344,25 @@ const Starred = () => {
       {!loading &&
         starredItems.length > 0 &&
         (viewMode === "list" ? (
+          // <FileListView
+          //   files={sortedFiles}
+          //   folders={sortedFolders}
+          //   onFileAction={handleFileAction}
+          //   onFolderAction={handleFolderAction}
+          //   onNavigate={handleFolderNavigate}
+          //   currentFolderId={null}
+          //   folderName="Starred"
+          //   fullPath={[{ id: null, name: "My Drive" }]}
+          //   source="starred"
+          // />
+
           <FileListView
             files={sortedFiles}
             folders={sortedFolders}
             onFileAction={handleFileAction}
             onFolderAction={handleFolderAction}
             onNavigate={handleFolderNavigate}
+            onStarToggle={handleUnstar}
             currentFolderId={null}
             folderName="Starred"
             fullPath={[{ id: null, name: "My Drive" }]}
@@ -369,7 +387,7 @@ const Starred = () => {
                         folder={folder}
                         onNavigate={handleFolderNavigate}
                         onAction={handleFolderAction}
-                        onStarToggle={() => handleUnstar(folder)}
+                        onStarToggle={() => handleUnstar()}
                       />
                     ))}
                   </AnimatePresence>
@@ -393,7 +411,7 @@ const Starred = () => {
                         key={file.id}
                         file={file}
                         onAction={handleFileAction}
-                        onStarToggle={() => handleUnstar(file)}
+                        onStarToggle={() => handleUnstar()}
                         currentFolderId={file.folder_id ?? null}
                         folderName="Starred"
                         sharedRole={file.role ?? null}

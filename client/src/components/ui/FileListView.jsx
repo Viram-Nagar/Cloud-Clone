@@ -240,7 +240,7 @@ const FileRow = ({
       toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
         type: newStarred ? "success" : "info",
       });
-      onStarToggle?.();
+      onStarToggle?.(file);
     } catch {
       setIsStarred((prev) => !prev);
       toast.error("Failed to update star");
@@ -540,7 +540,7 @@ const FolderRow = ({ folder, onNavigate, onAction, onStarToggle }) => {
       toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
         type: newStarred ? "success" : "info",
       });
-      onStarToggle?.();
+      onStarToggle?.(folder);
     } catch {
       setIsStarred((prev) => !prev);
       toast.error("Failed to update star");

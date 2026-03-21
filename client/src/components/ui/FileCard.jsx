@@ -364,7 +364,7 @@ const FileCard = ({
       toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
         type: newStarred ? "success" : "info",
       });
-      onStarToggle?.();
+      onStarToggle?.(file);
     } catch (err) {
       setIsStarred((prev) => !prev);
       toast.error("Failed to update star");
