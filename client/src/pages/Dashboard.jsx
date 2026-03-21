@@ -124,7 +124,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchContent = async () => {
+  const fetchContent = async (folderId) => {
     setLoading(true);
     try {
       const [filesRes, foldersRes] = await Promise.all([
