@@ -27,7 +27,6 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
 
     fetchDownloadUrl();
 
-    // Cleanup on close
     return () => {
       setDownloadUrl(null);
       setLoading(true);
@@ -37,13 +36,11 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
 
   if (!isOpen || !file) return null;
 
-  // --- Detect file type ---
   const mime = file.mime_type || "";
   const isImage = mime.startsWith("image/");
   const isPDF = mime === "application/pdf";
   const isText = mime.startsWith("text/");
 
-  // --- Render preview based on type ---
   const renderPreview = () => {
     if (loading) {
       return (
@@ -88,7 +85,6 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
       return <TextPreview url={downloadUrl} />;
     }
 
-    // Fallback — no preview available
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <FileIcon fileName={file.name} size={48} />
@@ -106,15 +102,12 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal Box */}
       <div className="relative w-full max-w-3xl bg-surface rounded-3xl shadow-2xl border border-border overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-3 min-w-0">
             <FileIcon fileName={file.name} size={20} />
@@ -131,7 +124,6 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Download Button */}
             {downloadUrl && (
               <Button
                 variant="secondary"
@@ -150,21 +142,19 @@ const FilePreviewModal = ({ file, isOpen, onClose }) => {
                 <Download size={14} /> Download
               </Button>
             )}
-            {/* Close Button */}
+
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X size={18} />
             </Button>
           </div>
         </div>
 
-        {/* Preview Content */}
         <div className="p-5">{renderPreview()}</div>
       </div>
     </div>
   );
 };
 
-// --- Text Preview Sub-component ---
 const TextPreview = ({ url }) => {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);

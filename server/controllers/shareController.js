@@ -120,13 +120,22 @@ exports.getPublicResource = async (req, res) => {
     const { token } = req.params;
     const { password } = req.query;
 
+    // const shareQuery = `
+    //   SELECT ls.*, f.name as file_name, fl.name as folder_name
+    //   FROM link_shares ls
+    //   LEFT JOIN files f ON ls.file_id = f.id
+    //   LEFT JOIN folders fl ON ls.folder_id = fl.id
+    //   WHERE ls.token = $1
+    // `;
+
     const shareQuery = `
-      SELECT ls.*, f.name as file_name, fl.name as folder_name 
-      FROM link_shares ls
-      LEFT JOIN files f ON ls.file_id = f.id
-      LEFT JOIN folders fl ON ls.folder_id = fl.id
-      WHERE ls.token = $1
-    `;
+  SELECT ls.*, f.name as file_name, f.mime_type as file_mime_type, fl.name as folder_name 
+  FROM link_shares ls
+  LEFT JOIN files f ON ls.file_id = f.id
+  LEFT JOIN folders fl ON ls.folder_id = fl.id
+  WHERE ls.token = $1
+`;
+
     const result = await db.query(shareQuery, [token]);
 
     if (result.rows.length === 0) {
@@ -159,6 +168,7 @@ exports.getPublicResource = async (req, res) => {
         name: share.file_name || share.folder_name,
         fileId: share.file_id,
         folderId: share.folder_id,
+        mimeType: share.file_mime_type || null,
       },
     });
   } catch (error) {
