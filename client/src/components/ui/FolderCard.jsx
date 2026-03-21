@@ -7,6 +7,7 @@ import Card from "./Card";
 import Button from "./Button";
 import ContextMenu from "./ContextMenu";
 import API from "../../api.jsx";
+import { toast } from "react-toastify";
 
 const FolderCard = ({ folder, onNavigate, onAction, onStarToggle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,17 +60,38 @@ const FolderCard = ({ folder, onNavigate, onAction, onStarToggle }) => {
     e.stopPropagation();
     if (isStarring) return;
     setIsStarring(true);
-    setIsStarred((prev) => !prev);
+    const newStarred = !isStarred;
+    setIsStarred(newStarred);
     try {
       await API.post("/files/stars/toggle", { folderId: folder.id });
+      toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
+        type: newStarred ? "success" : "info",
+      });
       onStarToggle?.();
     } catch (err) {
       setIsStarred((prev) => !prev);
+      toast.error("Failed to update star");
       console.error("Star toggle failed:", err);
     } finally {
       setIsStarring(false);
     }
   };
+
+  // const handleStarToggle = async (e) => {
+  //   e.stopPropagation();
+  //   if (isStarring) return;
+  //   setIsStarring(true);
+  //   setIsStarred((prev) => !prev);
+  //   try {
+  //     await API.post("/files/stars/toggle", { folderId: folder.id });
+  //     onStarToggle?.();
+  //   } catch (err) {
+  //     setIsStarred((prev) => !prev);
+  //     console.error("Star toggle failed:", err);
+  //   } finally {
+  //     setIsStarring(false);
+  //   }
+  // };
 
   const menuItems = [
     {

@@ -17,6 +17,7 @@ import FileIcon from "./FileIcon";
 import ContextMenu from "./ContextMenu";
 import { useNavigate } from "react-router-dom";
 import API from "../../api.jsx";
+import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 
 const formatSize = (bytes) => {
@@ -219,14 +220,30 @@ const FileRow = ({
     setIsStarred(file.is_starred || false);
   }, [file.is_starred]);
 
+  // const handleStarToggle = async (e) => {
+  //   e.stopPropagation();
+  //   setIsStarred((prev) => !prev);
+  //   try {
+  //     await API.post("/files/stars/toggle", { fileId: file.id });
+  //     onStarToggle?.();
+  //   } catch {
+  //     setIsStarred((prev) => !prev);
+  //   }
+  // };
+
   const handleStarToggle = async (e) => {
     e.stopPropagation();
-    setIsStarred((prev) => !prev);
+    const newStarred = !isStarred;
+    setIsStarred(newStarred);
     try {
       await API.post("/files/stars/toggle", { fileId: file.id });
+      toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
+        type: newStarred ? "success" : "info",
+      });
       onStarToggle?.();
     } catch {
       setIsStarred((prev) => !prev);
+      toast.error("Failed to update star");
     }
   };
 
@@ -503,14 +520,30 @@ const FolderRow = ({ folder, onNavigate, onAction, onStarToggle }) => {
     setIsStarred(folder.is_starred || false);
   }, [folder.is_starred]);
 
+  // const handleStarToggle = async (e) => {
+  //   e.stopPropagation();
+  //   setIsStarred((prev) => !prev);
+  //   try {
+  //     await API.post("/files/stars/toggle", { folderId: folder.id });
+  //     onStarToggle?.();
+  //   } catch {
+  //     setIsStarred((prev) => !prev);
+  //   }
+  // };
+
   const handleStarToggle = async (e) => {
     e.stopPropagation();
-    setIsStarred((prev) => !prev);
+    const newStarred = !isStarred;
+    setIsStarred(newStarred);
     try {
       await API.post("/files/stars/toggle", { folderId: folder.id });
+      toast(newStarred ? "⭐ Added to Starred" : "Removed from Starred", {
+        type: newStarred ? "success" : "info",
+      });
       onStarToggle?.();
     } catch {
       setIsStarred((prev) => !prev);
+      toast.error("Failed to update star");
     }
   };
 
