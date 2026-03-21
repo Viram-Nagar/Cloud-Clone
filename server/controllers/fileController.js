@@ -103,6 +103,8 @@ exports.getFolders = async (req, res) => {
   AND f.is_deleted = false
   ORDER BY f.name ASC
 `;
+
+      queryParams = [userId, parentId]; // ← ADD THIS LINE
     } else {
       queryText = `
   SELECT f.*,
