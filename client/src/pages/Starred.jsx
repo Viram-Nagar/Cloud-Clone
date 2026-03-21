@@ -133,25 +133,39 @@ const Starred = () => {
   //   }
   // };
 
-  const handleUnstar = async (item) => {
+  // const handleUnstar = async (item) => {
+  //   if (!item) {
+  //     try {
+  //       const res = await API.get("/files/stars");
+  //       setStarredItems(res.data.starredItems || []);
+  //     } catch (err) {
+  //       console.error("Refresh failed:", err);
+  //     }
+  //     return;
+  //   }
+  //   try {
+  //     await API.post("/files/stars/toggle", {
+  //       fileId: item.type === "file" ? item.id : undefined,
+  //       folderId: item.type === "folder" ? item.id : undefined,
+  //     });
+  //     setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
+  //   } catch (err) {
+  //     console.error("Unstar failed:", err);
+  //   }
+  // };
+
+  const handleUnstar = (item) => {
+    console.log("handleUnstar called, item:", item?.id, item?.name);
     if (!item) {
-      try {
-        const res = await API.get("/files/stars");
-        setStarredItems(res.data.starredItems || []);
-      } catch (err) {
-        console.error("Refresh failed:", err);
-      }
+      console.log("item is undefined!");
       return;
     }
-    try {
-      await API.post("/files/stars/toggle", {
-        fileId: item.type === "file" ? item.id : undefined,
-        folderId: item.type === "folder" ? item.id : undefined,
-      });
-      setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
-    } catch (err) {
-      console.error("Unstar failed:", err);
-    }
+    setStarredItems((prev) => {
+      console.log("before filter length:", prev.length);
+      const result = prev.filter((i) => i.id !== item.id);
+      console.log("after filter length:", result.length);
+      return result;
+    });
   };
 
   // --- File actions ---
