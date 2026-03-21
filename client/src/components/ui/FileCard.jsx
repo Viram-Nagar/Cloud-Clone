@@ -319,6 +319,7 @@ const FileCard = ({
   fullPath,
   sharedRole,
   isShared,
+  source = "dashboard",
 }) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -477,7 +478,7 @@ const FileCard = ({
           console.log("fullPath being sent:", fullPath);
 
           navigate(
-            `/preview/${file.id}?folderId=${currentFolderId ?? ""}&folderName=${encodeURIComponent(folderName ?? "My Drive")}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mime_type || "")}&sizeBytes=${file.size_bytes || 0}&path=${encodeURIComponent(JSON.stringify(fullPath ?? []))}`,
+            `/preview/${file.id}?folderId=${currentFolderId ?? ""}&folderName=${encodeURIComponent(folderName ?? "My Drive")}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mime_type || "")}&sizeBytes=${file.size_bytes || 0}&path=${encodeURIComponent(JSON.stringify(fullPath ?? []))}&source=${source}`,
           );
         }
       }}

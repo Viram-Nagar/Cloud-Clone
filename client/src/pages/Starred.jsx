@@ -235,6 +235,7 @@ const Starred = () => {
             currentFolderId={null}
             folderName="Starred"
             fullPath={[{ id: null, name: "My Drive" }]}
+            source="starred"
           />
         ) : (
           <div className="space-y-10">
@@ -285,6 +286,7 @@ const Starred = () => {
                         sharedRole={file.role ?? null}
                         fullPath={[{ id: null, name: "My Drive" }]}
                         isShared={!!file.role}
+                        source="starred"
                       />
                     ))}
                   </AnimatePresence>

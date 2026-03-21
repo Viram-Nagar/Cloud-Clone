@@ -197,6 +197,7 @@ const FileRow = ({
   folderName,
   fullPath,
   sharedRole,
+  source = "dashboard",
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isStarred, setIsStarred] = useState(file.is_starred || false);
@@ -286,7 +287,7 @@ const FileRow = ({
       onClick={() => {
         if (!isDragging) {
           navigate(
-            `/preview/${file.id}?folderId=${currentFolderId ?? ""}&folderName=${encodeURIComponent(folderName ?? "My Drive")}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mime_type || "")}&sizeBytes=${file.size_bytes || 0}&path=${encodeURIComponent(JSON.stringify(fullPath ?? []))}`,
+            `/preview/${file.id}?folderId=${currentFolderId ?? ""}&folderName=${encodeURIComponent(folderName ?? "My Drive")}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mime_type || "")}&sizeBytes=${file.size_bytes || 0}&path=${encodeURIComponent(JSON.stringify(fullPath ?? []))}&source=${source}`,
           );
         }
       }}
@@ -636,6 +637,7 @@ const FileListView = ({
   currentFolderId,
   folderName,
   fullPath,
+  source = "dashboard",
 }) => {
   return (
     <div className="bg-surface border border-border rounded-3xl shadow-sm">
@@ -674,6 +676,7 @@ const FileListView = ({
             currentFolderId={currentFolderId}
             folderName={folderName}
             fullPath={fullPath}
+            source={source}
           />
         ))}
       </AnimatePresence>

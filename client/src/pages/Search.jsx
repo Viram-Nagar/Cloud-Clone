@@ -287,6 +287,7 @@ const SearchPage = () => {
             currentFolderId={null}
             folderName="Search"
             fullPath={[{ id: null, name: "My Drive" }]}
+            source="search"
           />
         ) : (
           <motion.div
@@ -302,6 +303,7 @@ const SearchPage = () => {
                   currentFolderId={file.folder_id ?? null}
                   folderName="Search"
                   fullPath={[{ id: null, name: "My Drive" }]}
+                  source="search"
                 />
               ))}
             </AnimatePresence>

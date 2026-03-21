@@ -21,6 +21,7 @@ const FilePreviewPage = () => {
   const folderId = searchParams.get("folderId");
   const folderName = searchParams.get("folderName") || "My Drive";
   const pathParam = searchParams.get("path") || "";
+  const source = searchParams.get("source") || "dashboard";
 
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -85,6 +86,17 @@ const FilePreviewPage = () => {
 
   // --- Back navigation ---
   const handleBack = () => {
+    if (source === "starred") {
+      navigate("/starred");
+      return;
+    }
+
+    if (source === "search") {
+      navigate(-1); // goes back to search page with same query
+      return;
+    }
+
+    // source === "dashboard"
     if (folderId && folderId !== "") {
       navigate(
         `/dashboard?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}&path=${encodeURIComponent(pathParam)}`,
