@@ -182,6 +182,22 @@ exports.initializeUpload = async (req, res) => {
       return res.status(400).json({ message: "File name is required" });
     }
 
+    // Check duplicate file name in same location
+    const duplicate = await db.query(
+      `SELECT id FROM files 
+       WHERE owner_id = $1 
+       AND name = $2 
+       AND is_deleted = false
+       AND folder_id IS NOT DISTINCT FROM $3`,
+      [ownerId, fileName.trim(), folderId],
+    );
+
+    if (duplicate.rows.length > 0) {
+      return res.status(409).json({
+        message: `A file named "${fileName}" already exists here.`,
+      });
+    }
+
     // --- STORAGE LIMIT CHECK ---
     const totalLimit = 100 * 1024 * 1024; // 100MB
     const usageResult = await db.query(
@@ -516,6 +532,22 @@ exports.createFolder = async (req, res) => {
   try {
     const { name, parentId = null } = req.body;
     const userId = req.user.id;
+
+    // Check duplicate folder name in same location
+    const duplicate = await db.query(
+      `SELECT id FROM folders 
+       WHERE owner_id = $1 
+       AND name = $2 
+       AND is_deleted = false
+       AND parent_id IS NOT DISTINCT FROM $3`,
+      [userId, name.trim(), parentId],
+    );
+
+    if (duplicate.rows.length > 0) {
+      return res.status(409).json({
+        message: `A folder named "${name}" already exists here.`,
+      });
+    }
 
     const query = `
       INSERT INTO folders (name, parent_id, owner_id)

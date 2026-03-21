@@ -230,7 +230,11 @@ const Dashboard = () => {
       toast.success("Folder created successfully");
     } catch (err) {
       console.error("Error creating folder:", err);
-      toast.error("Failed to create folder");
+      if (err.response?.status === 409) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to create folder");
+      }
     } finally {
       setIsCreating(false);
     }

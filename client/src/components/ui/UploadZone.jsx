@@ -57,7 +57,12 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
     } catch (err) {
       const errMsg = err.response?.data?.message || "Upload failed";
       updateFile(id, { status: "error", error: errMsg });
-      if (err.response?.status === 403 && err.response?.data?.storageExceeded) {
+      if (err.response?.status === 409) {
+        toast.error(errMsg);
+      } else if (
+        err.response?.status === 403 &&
+        err.response?.data?.storageExceeded
+      ) {
         toast.warning("Storage limit reached! Delete files to free up space.");
       } else if (errMsg.includes("Invalid file type")) {
         toast.error("Invalid file type. Check allowed formats.");
