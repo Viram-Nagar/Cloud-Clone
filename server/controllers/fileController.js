@@ -804,10 +804,9 @@ exports.getFolderContents = async (req, res) => {
 exports.renameFolder = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newName, parentId } = req.body; // ← accept both
+    const { newName, parentId } = req.body;
     const userId = req.user.id;
 
-    // Prevent moving folder into itself
     if (parentId === id) {
       return res
         .status(400)
@@ -818,30 +817,51 @@ exports.renameFolder = async (req, res) => {
     let values;
 
     if (newName && parentId !== undefined) {
-      // Both rename + move
+      // Check duplicate for rename + move
+      const duplicate = await db.query(
+        `SELECT id FROM folders 
+         WHERE owner_id = $1 AND name = $2 AND is_deleted = false
+         AND parent_id IS NOT DISTINCT FROM $3 AND id != $4`,
+        [userId, newName.trim(), parentId, id],
+      );
+      if (duplicate.rows.length > 0) {
+        return res.status(409).json({
+          message: `"${newName}" already exists in this location.`,
+        });
+      }
       query = `
-        UPDATE folders
-        SET name = $1, parent_id = $2, updated_at = now()
-        WHERE id = $3 AND owner_id = $4
-        RETURNING *
+        UPDATE folders SET name = $1, parent_id = $2, updated_at = now()
+        WHERE id = $3 AND owner_id = $4 RETURNING *
       `;
       values = [newName, parentId, id, userId];
     } else if (newName) {
-      // Only rename
+      // Check duplicate for rename only
+      const currentFolder = await db.query(
+        "SELECT parent_id FROM folders WHERE id = $1 AND owner_id = $2",
+        [id, userId],
+      );
+      const currentParentId = currentFolder.rows[0]?.parent_id ?? null;
+
+      const duplicate = await db.query(
+        `SELECT id FROM folders 
+         WHERE owner_id = $1 AND name = $2 AND is_deleted = false
+         AND parent_id IS NOT DISTINCT FROM $3 AND id != $4`,
+        [userId, newName.trim(), currentParentId, id],
+      );
+      if (duplicate.rows.length > 0) {
+        return res.status(409).json({
+          message: `"${newName}" already exists in this location.`,
+        });
+      }
       query = `
-        UPDATE folders
-        SET name = $1, updated_at = now()
-        WHERE id = $2 AND owner_id = $3
-        RETURNING *
+        UPDATE folders SET name = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3 RETURNING *
       `;
       values = [newName, id, userId];
     } else if (parentId !== undefined) {
-      // Only move — parentId can be null (move to root)
       query = `
-        UPDATE folders
-        SET parent_id = $1, updated_at = now()
-        WHERE id = $2 AND owner_id = $3
-        RETURNING *
+        UPDATE folders SET parent_id = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3 RETURNING *
       `;
       values = [parentId, id, userId];
     } else {
@@ -856,7 +876,6 @@ exports.renameFolder = async (req, res) => {
         .json({ message: "Folder not found or unauthorized" });
     }
 
-    // Log activity
     if (newName) {
       await db.query(
         "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
@@ -876,6 +895,82 @@ exports.renameFolder = async (req, res) => {
     res.status(500).json({ message: "Error updating folder" });
   }
 };
+
+// exports.renameFolder = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { newName, parentId } = req.body; // ← accept both
+//     const userId = req.user.id;
+
+//     // Prevent moving folder into itself
+//     if (parentId === id) {
+//       return res
+//         .status(400)
+//         .json({ message: "Cannot move folder into itself" });
+//     }
+
+//     let query;
+//     let values;
+
+//     if (newName && parentId !== undefined) {
+//       // Both rename + move
+//       query = `
+//         UPDATE folders
+//         SET name = $1, parent_id = $2, updated_at = now()
+//         WHERE id = $3 AND owner_id = $4
+//         RETURNING *
+//       `;
+//       values = [newName, parentId, id, userId];
+//     } else if (newName) {
+//       // Only rename
+//       query = `
+//         UPDATE folders
+//         SET name = $1, updated_at = now()
+//         WHERE id = $2 AND owner_id = $3
+//         RETURNING *
+//       `;
+//       values = [newName, id, userId];
+//     } else if (parentId !== undefined) {
+//       // Only move — parentId can be null (move to root)
+//       query = `
+//         UPDATE folders
+//         SET parent_id = $1, updated_at = now()
+//         WHERE id = $2 AND owner_id = $3
+//         RETURNING *
+//       `;
+//       values = [parentId, id, userId];
+//     } else {
+//       return res.status(400).json({ message: "Nothing to update" });
+//     }
+
+//     const result = await db.query(query, values);
+
+//     if (result.rows.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "Folder not found or unauthorized" });
+//     }
+
+//     // Log activity
+//     if (newName) {
+//       await db.query(
+//         "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
+//         [userId, id, "renamed", `Folder renamed to '${newName}'`],
+//       );
+//     }
+//     if (parentId !== undefined) {
+//       await db.query(
+//         "INSERT INTO activities (user_id, folder_id, action, details) VALUES ($1, $2, $3, $4)",
+//         [userId, id, "move", `Moved folder to '${parentId ?? "root"}'`],
+//       );
+//     }
+
+//     res.status(200).json(result.rows[0]);
+//   } catch (error) {
+//     console.error("Update Folder Error:", error);
+//     res.status(500).json({ message: "Error updating folder" });
+//   }
+// };
 
 // exports.renameFolder = async (req, res) => {
 //   try {
@@ -972,38 +1067,58 @@ exports.permanentDeleteFolder = async (req, res) => {
 exports.renameFile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newName, folderId } = req.body; // ← accept both
+    const { newName, folderId } = req.body;
     const userId = req.user.id;
 
-    // Build dynamic query based on what was sent
     let query;
     let values;
 
     if (newName && folderId !== undefined) {
-      // Both rename + move
+      // Check duplicate for rename + move
+      const duplicate = await db.query(
+        `SELECT id FROM files 
+         WHERE owner_id = $1 AND name = $2 AND is_deleted = false
+         AND folder_id IS NOT DISTINCT FROM $3 AND id != $4`,
+        [userId, newName.trim(), folderId, id],
+      );
+      if (duplicate.rows.length > 0) {
+        return res.status(409).json({
+          message: `"${newName}" already exists in this location.`,
+        });
+      }
       query = `
-        UPDATE files
-        SET name = $1, folder_id = $2, updated_at = now()
-        WHERE id = $3 AND owner_id = $4
-        RETURNING *
+        UPDATE files SET name = $1, folder_id = $2, updated_at = now()
+        WHERE id = $3 AND owner_id = $4 RETURNING *
       `;
       values = [newName, folderId, id, userId];
     } else if (newName) {
-      // Only rename
+      // Check duplicate for rename only
+      const currentFile = await db.query(
+        "SELECT folder_id FROM files WHERE id = $1 AND owner_id = $2",
+        [id, userId],
+      );
+      const currentFolderId = currentFile.rows[0]?.folder_id ?? null;
+
+      const duplicate = await db.query(
+        `SELECT id FROM files 
+         WHERE owner_id = $1 AND name = $2 AND is_deleted = false
+         AND folder_id IS NOT DISTINCT FROM $3 AND id != $4`,
+        [userId, newName.trim(), currentFolderId, id],
+      );
+      if (duplicate.rows.length > 0) {
+        return res.status(409).json({
+          message: `"${newName}" already exists in this location.`,
+        });
+      }
       query = `
-        UPDATE files
-        SET name = $1, updated_at = now()
-        WHERE id = $2 AND owner_id = $3
-        RETURNING *
+        UPDATE files SET name = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3 RETURNING *
       `;
       values = [newName, id, userId];
     } else if (folderId !== undefined) {
-      // Only move — folderId can be null (move to root)
       query = `
-        UPDATE files
-        SET folder_id = $1, updated_at = now()
-        WHERE id = $2 AND owner_id = $3
-        RETURNING *
+        UPDATE files SET folder_id = $1, updated_at = now()
+        WHERE id = $2 AND owner_id = $3 RETURNING *
       `;
       values = [folderId, id, userId];
     } else {
@@ -1016,7 +1131,6 @@ exports.renameFile = async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
-    // Log activity
     if (newName) {
       await db.query(
         "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
@@ -1036,6 +1150,74 @@ exports.renameFile = async (req, res) => {
     res.status(500).json({ message: "Error updating file" });
   }
 };
+
+// exports.renameFile = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { newName, folderId } = req.body; // ← accept both
+//     const userId = req.user.id;
+
+//     // Build dynamic query based on what was sent
+//     let query;
+//     let values;
+
+//     if (newName && folderId !== undefined) {
+//       // Both rename + move
+//       query = `
+//         UPDATE files
+//         SET name = $1, folder_id = $2, updated_at = now()
+//         WHERE id = $3 AND owner_id = $4
+//         RETURNING *
+//       `;
+//       values = [newName, folderId, id, userId];
+//     } else if (newName) {
+//       // Only rename
+//       query = `
+//         UPDATE files
+//         SET name = $1, updated_at = now()
+//         WHERE id = $2 AND owner_id = $3
+//         RETURNING *
+//       `;
+//       values = [newName, id, userId];
+//     } else if (folderId !== undefined) {
+//       // Only move — folderId can be null (move to root)
+//       query = `
+//         UPDATE files
+//         SET folder_id = $1, updated_at = now()
+//         WHERE id = $2 AND owner_id = $3
+//         RETURNING *
+//       `;
+//       values = [folderId, id, userId];
+//     } else {
+//       return res.status(400).json({ message: "Nothing to update" });
+//     }
+
+//     const result = await db.query(query, values);
+
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ message: "File not found" });
+//     }
+
+//     // Log activity
+//     if (newName) {
+//       await db.query(
+//         "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
+//         [userId, id, "renamed", `Renamed file to '${newName}'`],
+//       );
+//     }
+//     if (folderId !== undefined) {
+//       await db.query(
+//         "INSERT INTO activities (user_id, file_id, action, details) VALUES ($1, $2, $3, $4)",
+//         [userId, id, "move", `Moved file to folder '${folderId ?? "root"}'`],
+//       );
+//     }
+
+//     res.status(200).json(result.rows[0]);
+//   } catch (error) {
+//     console.error("Update File Error:", error);
+//     res.status(500).json({ message: "Error updating file" });
+//   }
+// };
 
 // exports.renameFile = async (req, res) => {
 //   try {

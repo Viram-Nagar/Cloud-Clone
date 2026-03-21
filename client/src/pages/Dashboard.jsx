@@ -319,7 +319,11 @@ const Dashboard = () => {
       );
     } catch (err) {
       console.error("Rename failed:", err);
-      toast.error("Failed to rename");
+      if (err.response?.status === 409) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to rename");
+      }
     } finally {
       setIsRenaming(false);
     }
