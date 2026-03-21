@@ -2036,6 +2036,46 @@ exports.getRecentFiles = async (req, res) => {
   }
 };
 
+exports.getFolderPath = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const result = await db.query(
+      `WITH RECURSIVE folder_path AS (
+        SELECT id, name, parent_id
+        FROM folders
+        WHERE id = $1 AND owner_id = $2 AND is_deleted = false
+        UNION ALL
+        SELECT f.id, f.name, f.parent_id
+        FROM folders f
+        JOIN folder_path fp ON f.id = fp.parent_id
+        WHERE f.owner_id = $2 AND f.is_deleted = false
+      )
+      SELECT * FROM folder_path`,
+      [id, userId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Folder not found" });
+    }
+
+    // Reverse to get root → current order
+    const path = result.rows.reverse().map((f) => ({
+      id: f.id,
+      name: f.name,
+    }));
+
+    // Prepend My Drive
+    const fullPath = [{ id: null, name: "My Drive" }, ...path];
+
+    res.status(200).json({ path: fullPath });
+  } catch (error) {
+    console.error("Get Folder Path Error:", error);
+    res.status(500).json({ message: "Error fetching folder path" });
+  }
+};
+
 // const db = require("../db"); // Your high-performance PostgreSQL pool
 // const { v4: uuidv4 } = require("uuid"); // Install this: npm install uuid
 // const supabase = require("../config/supabaseClient");

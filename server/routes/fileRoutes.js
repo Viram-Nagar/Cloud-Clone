@@ -22,6 +22,7 @@ router.get("/storage-stats", protect, fileController.getStorageStats);
 router.get("/search", protect, fileController.searchFiles);
 router.get("/activity", protect, fileController.getActivity);
 router.get("/recent-files", protect, fileController.getRecentFiles);
+router.get("/folder-path/:id", protect, fileController.getFolderPath);
 router.get("/stars", protect, fileController.getStarredItems);
 router.post("/stars/toggle", protect, fileController.toggleStar);
 router.post("/init", protect, fileController.initializeUpload);

@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../api.jsx";
+import { useNavigate } from "react-router-dom";
 import downloadFile from "../util/DownloadFile.jsx";
 import FileCard from "../components/ui/FileCard";
 import FolderCard from "../components/ui/FolderCard";
@@ -22,6 +23,7 @@ const Starred = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [starredItems, setStarredItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [shareTarget, setShareTarget] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -45,6 +47,28 @@ const Starred = () => {
       console.error("Failed to fetch starred items:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- Navigate to folder with full breadcrumb path ---
+  const handleFolderNavigate = async (folderId, folderName) => {
+    try {
+      const res = await API.get(`/files/folder-path/${folderId}`);
+      const fullPath = res.data.path;
+      navigate(
+        `/dashboard?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}&path=${encodeURIComponent(JSON.stringify(fullPath))}`,
+      );
+    } catch (err) {
+      console.error("Failed to get folder path:", err);
+      // Fallback — navigate without full path
+      navigate(
+        `/dashboard?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}&path=${encodeURIComponent(
+          JSON.stringify([
+            { id: null, name: "My Drive" },
+            { id: folderId, name: folderName },
+          ]),
+        )}`,
+      );
     }
   };
 
@@ -226,7 +250,6 @@ const Starred = () => {
       )}
 
       {/* CONTENT */}
-      {/* CONTENT */}
       {!loading &&
         starredItems.length > 0 &&
         (viewMode === "list" ? (
@@ -235,7 +258,7 @@ const Starred = () => {
             folders={sortedFolders}
             onFileAction={handleFileAction}
             onFolderAction={handleFolderAction}
-            onNavigate={() => {}}
+            onNavigate={handleFolderNavigate}
             currentFolderId={null}
             folderName="Starred"
             fullPath={[{ id: null, name: "My Drive" }]}
@@ -258,7 +281,7 @@ const Starred = () => {
                       <FolderCard
                         key={folder.id}
                         folder={folder}
-                        onNavigate={() => {}}
+                        onNavigate={handleFolderNavigate}
                         onAction={handleFolderAction}
                         onStarToggle={() => handleUnstar(folder)}
                       />
@@ -383,7 +406,6 @@ export default Starred;
 // import downloadFile from "../util/DownloadFile.jsx";
 // import FileCard from "../components/ui/FileCard";
 // import FolderCard from "../components/ui/FolderCard";
-
 // import ShareModal from "../components/ui/ShareModal";
 // import VersionModal from "../components/ui/VersionModal";
 
@@ -402,6 +424,7 @@ export default Starred;
 //   const [renameTarget, setRenameTarget] = useState(null);
 //   const [newName, setNewName] = useState("");
 //   const [isRenaming, setIsRenaming] = useState(false);
+
 //   useEffect(() => {
 //     fetchStarredItems();
 //   }, []);
@@ -418,21 +441,18 @@ export default Starred;
 //     }
 //   };
 
-//   // --- Unstar handler ---
 //   const handleUnstar = async (item) => {
 //     try {
 //       await API.post("/files/stars/toggle", {
 //         fileId: item.type === "file" ? item.id : undefined,
 //         folderId: item.type === "folder" ? item.id : undefined,
 //       });
-//       // Remove from list immediately (optimistic update)
 //       setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
 //     } catch (err) {
 //       console.error("Unstar failed:", err);
 //     }
 //   };
 
-//   // --- File actions ---
 //   const handleFileAction = async (file, action) => {
 //     if (action === "download") {
 //       await downloadFile(file);
@@ -460,14 +480,12 @@ export default Starred;
 //       setIsRenameModalOpen(true);
 //     }
 
-//     // Add to handleFileAction in SearchPage.jsx and Starred.jsx
 //     if (action === "versions") {
 //       setVersionTarget(file);
 //       setIsVersionModalOpen(true);
 //     }
 //   };
 
-//   // --- Folder actions ---
 //   const handleFolderAction = async (folder, action) => {
 //     if (action === "delete") {
 //       try {
@@ -485,34 +503,6 @@ export default Starred;
 //     }
 //   };
 
-//   const files = starredItems.filter((i) => i.type === "file");
-//   const folders = starredItems.filter((i) => i.type === "folder");
-
-//   // const handleRename = async (e) => {
-//   //   e.preventDefault();
-//   //   if (!newName.trim()) return;
-//   //   setIsRenaming(true);
-//   //   try {
-//   //     if (renameTarget.type === "folder") {
-//   //       await API.patch(`/files/folders/${renameTarget.id}`, {
-//   //         newName: newName.trim(),
-//   //       });
-//   //     } else {
-//   //       await API.patch(`/files/${renameTarget.id}`, {
-//   //         newName: newName.trim(),
-//   //       });
-//   //     }
-//   //     setIsRenameModalOpen(false);
-//   //     setRenameTarget(null);
-//   //     setNewName("");
-//   //     fetchStarredItems();
-//   //   } catch (err) {
-//   //     console.error("Rename failed:", err);
-//   //   } finally {
-//   //     setIsRenaming(false);
-//   //   }
-//   // };
-
 //   const handleRename = async (e) => {
 //     e.preventDefault();
 //     if (!newName.trim()) return;
@@ -523,7 +513,6 @@ export default Starred;
 //           newName: newName.trim(),
 //         });
 //       } else {
-//         // Try owner rename first, fall back to shared rename
 //         try {
 //           await API.patch(`/files/${renameTarget.id}`, {
 //             newName: newName.trim(),
@@ -543,7 +532,11 @@ export default Starred;
 //       toast.success("Renamed successfully");
 //     } catch (err) {
 //       console.error("Rename failed:", err);
-//       toast.error("Failed to rename");
+//       if (err.response?.status === 409) {
+//         toast.error(err.response.data.message);
+//       } else {
+//         toast.error("Failed to rename");
+//       }
 //     } finally {
 //       setIsRenaming(false);
 //     }
@@ -560,6 +553,8 @@ export default Starred;
 //       return sortOrder === "asc" ? comparison : -comparison;
 //     });
 
+//   const files = starredItems.filter((i) => i.type === "file");
+//   const folders = starredItems.filter((i) => i.type === "folder");
 //   const sortedFiles = getSorted(files);
 //   const sortedFolders = getSorted(folders);
 
@@ -625,100 +620,78 @@ export default Starred;
 
 //       {/* CONTENT */}
 //       {/* CONTENT */}
-//       {!loading && starredItems.length > 0 && (
-//         <div className="space-y-10">
-//           {/* STARRED FOLDERS */}
-//           {folders.length > 0 && (
-//             <section className="space-y-4">
-//               <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-//                 Folders
-//               </h3>
-//               <motion.div
-//                 layout
-//                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-//               >
-//                 <AnimatePresence mode="popLayout">
-//                   {folders.map((folder) => (
-//                     <FolderCard
-//                       key={folder.id}
-//                       folder={folder}
-//                       onNavigate={() => {}}
-//                       onAction={handleFolderAction}
-//                       onStarToggle={() => handleUnstar(folder)}
-//                     />
-//                   ))}
-//                 </AnimatePresence>
-//               </motion.div>
-//             </section>
-//           )}
+//       {!loading &&
+//         starredItems.length > 0 &&
+//         (viewMode === "list" ? (
+//           <FileListView
+//             files={sortedFiles}
+//             folders={sortedFolders}
+//             onFileAction={handleFileAction}
+//             onFolderAction={handleFolderAction}
+//             onNavigate={() => {}}
+//             currentFolderId={null}
+//             folderName="Starred"
+//             fullPath={[{ id: null, name: "My Drive" }]}
+//             source="starred"
+//           />
+//         ) : (
+//           <div className="space-y-10">
+//             {/* STARRED FOLDERS */}
+//             {folders.length > 0 && (
+//               <section className="space-y-4">
+//                 <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
+//                   Folders
+//                 </h3>
+//                 <motion.div
+//                   layout
+//                   className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+//                 >
+//                   <AnimatePresence mode="popLayout">
+//                     {sortedFolders.map((folder) => (
+//                       <FolderCard
+//                         key={folder.id}
+//                         folder={folder}
+//                         onNavigate={() => {}}
+//                         onAction={handleFolderAction}
+//                         onStarToggle={() => handleUnstar(folder)}
+//                       />
+//                     ))}
+//                   </AnimatePresence>
+//                 </motion.div>
+//               </section>
+//             )}
 
-//           {/* STARRED FILES */}
-//           {files.length > 0 && (
-//             <section className="space-y-4">
-//               <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-//                 Files
-//               </h3>
-//               <motion.div
-//                 layout
-//                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
-//               >
-//                 <AnimatePresence mode="popLayout">
-//                   {files.map((file) => (
-//                     <FileCard
-//                       key={file.id}
-//                       file={file}
-//                       onAction={handleFileAction}
-//                       onStarToggle={() => handleUnstar(file)}
-//                       currentFolderId={file.folder_id ?? null}
-//                       folderName="Starred"
-//                       sharedRole={file.role ?? null}
-//                       isShared={!!file.role}
-//                     />
-//                   ))}
-//                 </AnimatePresence>
-//               </motion.div>
-//             </section>
-//           )}
-//         </div>
-//       )}
-
-//       {files.length > 0 && (
-//         <section className="space-y-4">
-//           <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-//             Files
-//           </h3>
-//           {viewMode === "list" ? (
-//             <FileListView
-//               files={sortedFiles}
-//               folders={[]}
-//               onFileAction={handleFileAction}
-//               currentFolderId={null}
-//               folderName="Starred"
-//               fullPath={[]}
-//             />
-//           ) : (
-//             <motion.div
-//               layout
-//               className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-//             >
-//               <AnimatePresence mode="popLayout">
-//                 {sortedFiles.map((file) => (
-//                   <FileCard
-//                     key={file.id}
-//                     file={file}
-//                     onAction={handleFileAction}
-//                     onStarToggle={() => handleUnstar(file)}
-//                     currentFolderId={file.folder_id ?? null}
-//                     folderName="Starred"
-//                     sharedRole={file.role ?? null}
-//                     isShared={!!file.role}
-//                   />
-//                 ))}
-//               </AnimatePresence>
-//             </motion.div>
-//           )}
-//         </section>
-//       )}
+//             {/* STARRED FILES */}
+//             {files.length > 0 && (
+//               <section className="space-y-4">
+//                 <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
+//                   Files
+//                 </h3>
+//                 <motion.div
+//                   layout
+//                   className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+//                 >
+//                   <AnimatePresence mode="popLayout">
+//                     {sortedFiles.map((file) => (
+//                       <FileCard
+//                         key={file.id}
+//                         file={file}
+//                         onAction={handleFileAction}
+//                         onStarToggle={() => handleUnstar(file)}
+//                         currentFolderId={file.folder_id ?? null}
+//                         folderName="Starred"
+//                         sharedRole={file.role ?? null}
+//                         fullPath={[{ id: null, name: "My Drive" }]}
+//                         isShared={!!file.role}
+//                         source="starred"
+//                       />
+//                     ))}
+//                   </AnimatePresence>
+//                 </motion.div>
+//               </section>
+//             )}
+//           </div>
+//         ))}
 
 //       {/* SHARE MODAL */}
 //       <ShareModal
@@ -730,6 +703,7 @@ export default Starred;
 //         resource={shareTarget}
 //       />
 
+//       {/* VERSION MODAL */}
 //       <VersionModal
 //         isOpen={isVersionModalOpen}
 //         onClose={() => {
@@ -786,113 +760,3 @@ export default Starred;
 // };
 
 // export default Starred;
-// {!loading && starredItems.length > 0 && (
-//         <div className="space-y-10">
-{
-  /* STARRED FOLDERS */
-}
-{
-  /* {folders.length > 0 && (
-            <section className="space-y-4">
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-                Folders
-              </h3>
-              <motion.div
-                layout
-                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-              >
-                <AnimatePresence mode="popLayout">
-                  {sortedFolders.map((folder) => (
-                    <FolderCard
-                      key={folder.id}
-                      folder={folder}
-                      onNavigate={() => {}}
-                      onAction={handleFolderAction}
-                      onStarToggle={() => handleUnstar(folder)}
-                    />
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            </section>
-          )} */
-}
-{
-  /* {folders.length > 0 && (
-            <section className="space-y-4">
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-                Folders
-              </h3>
-              {viewMode === "list" ? (
-                <FileListView
-                  files={[]}
-                  folders={sortedFolders}
-                  onFileAction={handleFileAction}
-                  onFolderAction={handleFolderAction}
-                  onNavigate={() => {}}
-                  currentFolderId={null}
-                  folderName="Starred"
-                  fullPath={[]}
-                />
-              ) : (
-                <motion.div
-                  layout
-                  className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {sortedFolders.map((folder) => (
-                      <FolderCard
-                        key={folder.id}
-                        folder={folder}
-                        onNavigate={() => {}}
-                        onAction={handleFolderAction}
-                        onStarToggle={() => handleUnstar(folder)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </section>
-          )}
-          {/* STARRED FILES */
-}
-{
-  /* {files.length > 0 && (
-            <section className="space-y-4">
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
-                Files
-              </h3>
-              {viewMode === "list" ? (
-                <FileListView
-                  files={sortedFiles}
-                  folders={[]}
-                  onFileAction={handleFileAction}
-                  currentFolderId={null}
-                  folderName="Starred"
-                  fullPath={[]}
-                />
-              ) : (
-                <motion.div
-                  layout
-                  className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {sortedFiles.map((file) => (
-                      <FileCard
-                        key={file.id}
-                        file={file}
-                        onAction={handleFileAction}
-                        onStarToggle={() => handleUnstar(file)}
-                        currentFolderId={file.folder_id ?? null}
-                        folderName="Starred"
-                        sharedRole={file.role ?? null}
-                        isShared={!!file.role}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </section>
-          )}
-        </div>
-      )} */
-}
