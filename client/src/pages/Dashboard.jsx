@@ -116,7 +116,7 @@ const Dashboard = () => {
         toast.success(`"${dragData.name}" moved successfully`);
       }
 
-      fetchContent(currentFolderId);
+      fetchContent();
       window.dispatchEvent(new Event("storage-updated"));
     } catch (err) {
       console.error("Move failed:", err);
@@ -124,33 +124,12 @@ const Dashboard = () => {
     }
   };
 
-  // const fetchContent = async (folderId) => {
-  //   setLoading(true);
-  //   try {
-  //     const [filesRes, foldersRes] = await Promise.all([
-  //       API.get("/files", { params: { folderId: currentFolderId } }),
-  //       API.get("/files/folders", { params: { parentId: currentFolderId } }),
-  //     ]);
-  //     setFiles(filesRes.data.files || []);
-  //     setFolders(foldersRes.data.folders || []);
-  //   } catch (err) {
-  //     console.error(
-  //       "Failed to fetch content:",
-  //       err.response?.data?.message || err.message,
-  //     );
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  const fetchContent = async (folderId) => {
+  const fetchContent = async () => {
     setLoading(true);
     try {
       const [filesRes, foldersRes] = await Promise.all([
-        API.get("/files", { params: { folderId: folderId ?? undefined } }),
-        API.get("/files/folders", {
-          params: { parentId: folderId ?? undefined },
-        }),
+        API.get("/files", { params: { folderId: currentFolderId } }),
+        API.get("/files/folders", { params: { parentId: currentFolderId } }),
       ]);
       setFiles(filesRes.data.files || []);
       setFolders(foldersRes.data.folders || []);
@@ -164,12 +143,33 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchContent(currentFolderId);
-  }, [currentFolderId]);
+  // const fetchContent  async (folderId) => {
+  //   setLoading(true);
+  //   try {
+  //     const [filesRes, foldersRes] = await Promise.all([
+  //       API.get("/files", { params: { folderId: folderId ?? undefined } }),
+  //       API.get("/files/folders", {
+  //         params: { parentId: folderId ?? undefined },
+  //       }),
+  //     ]);
+  //     setFiles(filesRes.data.files || []);
+  //     setFolders(foldersRes.data.folders || []);
+  //   } catch (err) {
+  //     console.error(
+  //       "Failed to fetch content:",
+  //       err.response?.data?.message || err.message,
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchContent(currentFolderId);
+  // }, [currentFolderId]);
 
   useEffect(() => {
-    fetchContent(currentFolderId); // fetchContent(); previous code
+    fetchContent();
   }, [currentFolderId]);
 
   const handleFolderClick = (id, name) => {
@@ -196,7 +196,7 @@ const Dashboard = () => {
       });
       setNewFolderName("");
       setIsFolderModalOpen(false);
-      fetchContent(currentFolderId);
+      fetchContent();
       toast.success("Folder created successfully");
     } catch (err) {
       console.error("Error creating folder:", err);
@@ -218,7 +218,7 @@ const Dashboard = () => {
     if (action === "delete") {
       try {
         await API.delete(`/files/${file.id}`);
-        fetchContent(currentFolderId);
+        fetchContent();
         window.dispatchEvent(new Event("storage-updated"));
         toast.success("File moved to trash");
       } catch (err) {
@@ -247,7 +247,7 @@ const Dashboard = () => {
     if (action === "delete") {
       try {
         await API.delete(`/files/folders/${folder.id}`);
-        fetchContent(currentFolderId);
+        fetchContent();
         toast.success("Folder moved to trash");
       } catch (err) {
         console.error("Folder delete failed:", err);
@@ -279,7 +279,7 @@ const Dashboard = () => {
       setIsRenameModalOpen(false);
       setRenameTarget(null);
       setNewName("");
-      fetchContent(currentFolderId);
+      fetchContent();
       toast.success(
         `${renameTarget.type === "folder" ? "Folder" : "File"} renamed successfully`,
       );
@@ -615,7 +615,7 @@ const Dashboard = () => {
             <UploadZone
               currentFolderId={currentFolderId}
               onUploadComplete={() => {
-                fetchContent(currentFolderId);
+                fetchContent();
                 setIsUploadModalOpen(false);
               }}
             />
