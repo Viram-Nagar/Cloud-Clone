@@ -22,7 +22,6 @@ const Header = () => {
 
   return (
     <div className="flex items-center justify-between w-full h-full gap-4">
-      {/* 1. Mobile Menu Trigger */}
       <Button
         variant="ghost"
         size="sm"
@@ -32,7 +31,6 @@ const Header = () => {
         <Menu size={24} />
       </Button>
 
-      {/* 2. Search Bar — visible on ALL screen sizes now */}
       <form onSubmit={handleSearch} className="flex-1 max-w-xl">
         <div className="relative group">
           <Search
@@ -55,7 +53,6 @@ const Header = () => {
         </div>
       </form>
 
-      {/* 3. Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-100 md:hidden">
           <div

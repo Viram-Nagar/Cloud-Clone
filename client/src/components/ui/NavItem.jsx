@@ -12,20 +12,16 @@ const NavItem = ({ to, icon: Icon, label, onClick }) => {
         
         ${
           isActive
-            ? /* Active State: The Gradient Look */
-              "bg-brand-gradient text-white shadow-md shadow-brand-blue/20"
-            : /* Inactive State: Subtle and clean */
-              "text-text-secondary hover:bg-bg-main hover:text-brand-blue"
+            ? "bg-brand-gradient text-white shadow-md shadow-brand-blue/20"
+            : "text-text-secondary hover:bg-bg-main hover:text-brand-blue"
         }
       `}
     >
-      {/* Icon: We use a group-hover effect to make the icon "pop" when inactive */}
       <Icon
         size={20}
         className="transition-transform duration-300 group-hover:scale-110"
       />
 
-      {/* Label */}
       <span className="text-sm tracking-wide">{label}</span>
     </NavLink>
   );

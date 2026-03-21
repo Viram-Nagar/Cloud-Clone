@@ -8,7 +8,6 @@ import Modal from "../components/ui/Modal";
 import FileIcon from "../components/ui/FileIcon";
 import { Folder } from "lucide-react";
 
-// --- Format file size ---
 const formatSize = (bytes) => {
   if (!bytes || bytes === 0) return "—";
   if (bytes < 1024) return bytes + " B";
@@ -16,7 +15,6 @@ const formatSize = (bytes) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-// --- Format date ---
 const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString("en-US", {
     day: "numeric",
@@ -33,7 +31,6 @@ const Trash = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // --- Fetch trash ---
   useEffect(() => {
     fetchTrash();
   }, []);
@@ -50,11 +47,10 @@ const Trash = () => {
     }
   };
 
-  // --- 3b: Restore item ---
   const handleRestore = async (item) => {
     try {
       await API.post(`/files/${item.id}/restore`, { type: item.type });
-      // Remove from trash list immediately
+
       setTrashItems((prev) => prev.filter((i) => i.id !== item.id));
       toast.success(`${item.name} restored successfully`);
     } catch (err) {
@@ -63,7 +59,6 @@ const Trash = () => {
     }
   };
 
-  // --- 3c: Permanent delete (single) ---
   const handlePermanentDelete = async () => {
     if (!deleteTarget) return;
     setIsProcessing(true);
@@ -71,8 +66,6 @@ const Trash = () => {
       if (deleteTarget.type === "file") {
         await API.delete(`/files/${deleteTarget.id}/permanent`);
       } else {
-        // For folders — soft delete is already done
-        // permanently delete folder from DB directly
         await API.delete(`/files/folders/${deleteTarget.id}/permanent`);
       }
       setTrashItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
@@ -87,11 +80,9 @@ const Trash = () => {
     }
   };
 
-  // --- 3d: Empty trash (all) ---
   const handleEmptyTrash = async () => {
     setIsProcessing(true);
     try {
-      // Delete all files permanently
       const files = trashItems.filter((i) => i.type === "file");
       const folders = trashItems.filter((i) => i.type === "folder");
 
@@ -113,7 +104,6 @@ const Trash = () => {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between bg-surface p-4 rounded-3xl border border-border shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-red-50 rounded-xl">
@@ -128,7 +118,6 @@ const Trash = () => {
           </div>
         </div>
 
-        {/* Empty Trash Button */}
         {trashItems.length > 0 && (
           <Button
             variant="danger"
@@ -142,7 +131,6 @@ const Trash = () => {
         )}
       </div>
 
-      {/* LOADING */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-32">
           <div className="animate-spin h-10 w-10 border-4 border-brand-blue border-t-transparent rounded-full mb-4" />
@@ -150,7 +138,6 @@ const Trash = () => {
         </div>
       )}
 
-      {/* EMPTY STATE */}
       {!loading && trashItems.length === 0 && (
         <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">
           <div className="flex flex-col items-center gap-3">
@@ -165,7 +152,6 @@ const Trash = () => {
         </div>
       )}
 
-      {/* TRASH ITEMS LIST */}
       {!loading && trashItems.length > 0 && (
         <div className="bg-surface border border-border rounded-3xl overflow-hidden shadow-sm">
           <AnimatePresence>
@@ -178,7 +164,6 @@ const Trash = () => {
                 transition={{ delay: index * 0.03 }}
                 className="flex items-center gap-4 px-5 py-4 border-b border-border/60 last:border-b-0 hover:bg-bg-main transition-colors"
               >
-                {/* Icon */}
                 <div className="shrink-0">
                   {item.type === "folder" ? (
                     <div className="p-2.5 bg-brand-blue/10 rounded-xl">
@@ -189,7 +174,6 @@ const Trash = () => {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-text-primary truncate">
                     {item.name}
@@ -217,9 +201,7 @@ const Trash = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Restore */}
                   <Button
                     variant="secondary"
                     size="sm"
@@ -230,7 +212,6 @@ const Trash = () => {
                     <span className="hidden sm:inline text-xs">Restore</span>
                   </Button>
 
-                  {/* Permanent Delete */}
                   {item.type === "file" && (
                     <Button
                       variant="danger"
@@ -252,7 +233,6 @@ const Trash = () => {
         </div>
       )}
 
-      {/* SINGLE ITEM DELETE CONFIRMATION MODAL */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -299,7 +279,6 @@ const Trash = () => {
         </div>
       </Modal>
 
-      {/* EMPTY TRASH CONFIRMATION MODAL */}
       <Modal
         isOpen={isEmptyTrashModalOpen}
         onClose={() => setIsEmptyTrashModalOpen(false)}

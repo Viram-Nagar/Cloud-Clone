@@ -33,7 +33,7 @@ const SearchPage = () => {
 
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [versionTarget, setVersionTarget] = useState(null);
-  // --- 1. Fetch results when URL query changes ---
+
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -59,14 +59,6 @@ const SearchPage = () => {
     }
   };
 
-  // --- 2. Handle search form submit ---
-  // const handleSearch = (e) => {
-  //   e.preventDefault();
-  //   if (!localQuery.trim()) return;
-  //   navigate(`/search?q=${encodeURIComponent(localQuery.trim())}`);
-  // };
-
-  // --- 3. File actions ---
   const handleFileAction = async (file, action) => {
     if (action === "download") {
       await downloadFile(file);
@@ -75,7 +67,7 @@ const SearchPage = () => {
     if (action === "delete") {
       try {
         await API.delete(`/files/${file.id}`);
-        // Remove from results locally
+
         setResults((prev) => prev.filter((f) => f.id !== file.id));
       } catch (err) {
         console.error("Delete failed:", err);
@@ -88,11 +80,9 @@ const SearchPage = () => {
     }
 
     if (action === "rename") {
-      // Refresh results after rename
       fetchResults(query);
     }
 
-    // Add to handleFileAction in SearchPage.jsx and Starred.jsx
     if (action === "versions") {
       setVersionTarget(file);
       setIsVersionModalOpen(true);
@@ -139,62 +129,6 @@ const SearchPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* A. SEARCH BAR */}
-      {/* <div className="bg-surface border border-border rounded-3xl p-4 shadow-sm">
-        <form onSubmit={handleSearch} className="flex gap-3">
-          <div className="relative flex-1">
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-            />
-            <input
-              type="text"
-              value={localQuery}
-              onChange={(e) => setLocalQuery(e.target.value)}
-              placeholder="Search your files..."
-              autoFocus
-              className="
-                w-full pl-11 pr-4 py-2.5 rounded-xl border border-border
-                bg-bg-main text-text-primary placeholder:text-text-secondary/50
-                hover:border-brand-blue/40
-                focus:bg-surface focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5
-                outline-none transition-all duration-200 text-sm
-              "
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-brand-gradient text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity shrink-0"
-          >
-            Search
-          </button>
-        </form>
-      </div> */}
-
-      {/* B. RESULTS HEADER */}
-      {/* {query && !loading && (
-        <div className="px-1">
-          <p className="text-sm text-text-secondary">
-            {results.length > 0 ? (
-              <>
-                Found{" "}
-                <span className="font-bold text-text-primary">
-                  {results.length}
-                </span>{" "}
-                result{results.length !== 1 ? "s" : ""} for{" "}
-                <span className="font-bold text-brand-blue">"{query}"</span>
-              </>
-            ) : (
-              <>
-                No results for{" "}
-                <span className="font-bold text-brand-blue">"{query}"</span>
-              </>
-            )}
-          </p>
-        </div>
-      )} */}
-
-      {/* CONTROLS */}
       {query && !loading && results.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <TypeFilter value={typeFilter} onChange={setTypeFilter} />
@@ -212,7 +146,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* C. LOADING */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-32">
           <div className="animate-spin h-10 w-10 border-4 border-brand-blue border-t-transparent rounded-full mb-4" />
@@ -220,14 +153,12 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* D. ERROR */}
       {error && !loading && (
         <div className="p-4 bg-red-50 border border-red-100 text-red-500 text-sm rounded-xl font-medium">
           {error}
         </div>
       )}
 
-      {/* E. EMPTY STATE */}
       {!loading && !error && query && results.length === 0 && (
         <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">
           <div className="flex flex-col items-center gap-3">
@@ -242,7 +173,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* F. NO QUERY STATE */}
       {!query && !loading && (
         <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">
           <div className="flex flex-col items-center gap-3">
@@ -257,26 +187,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* G. RESULTS GRID */}
-      {/* {!loading && results.length > 0 && (
-        <motion.div
-          layout
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
-        >
-          <AnimatePresence mode="popLayout">
-            {results.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onAction={handleFileAction}
-                currentFolderId={file.folder_id ?? null}
-                folderName="Search"
-              />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )} */}
-      {/* G. RESULTS */}
       {!loading &&
         filteredResults.length > 0 &&
         (viewMode === "list" ? (
@@ -309,9 +219,7 @@ const SearchPage = () => {
             </AnimatePresence>
           </motion.div>
         ))}
-      {/* H. FILE PREVIEW MODAL */}
 
-      {/* I. SHARE MODAL */}
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => {

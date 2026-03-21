@@ -6,14 +6,11 @@ import FolderCard from "../components/ui/FolderCard";
 import FilePreviewModal from "../components/ui/FilePreviewModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users } from "lucide-react";
-
 import downloadFile from "../util/DownloadFile.jsx";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import ShareModal from "../components/ui/ShareModal";
-
-// States:
 
 const SharedWithMe = () => {
   const [sharedItems, setSharedItems] = useState([]);
@@ -104,7 +101,6 @@ const SharedWithMe = () => {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex items-center gap-3 bg-surface p-4 rounded-3xl border border-border shadow-sm">
         <div className="p-2.5 bg-brand-blue/10 rounded-xl">
           <Users size={22} className="text-brand-blue" />
@@ -119,7 +115,6 @@ const SharedWithMe = () => {
         </div>
       </div>
 
-      {/* LOADING */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32">
           <div className="animate-spin h-10 w-10 border-4 border-brand-blue border-t-transparent rounded-full mb-4" />
@@ -128,7 +123,6 @@ const SharedWithMe = () => {
           </p>
         </div>
       ) : sharedItems.length === 0 ? (
-        /* EMPTY STATE */
         <div className="text-center py-24 bg-bg-main/40 rounded-3xl border-2 border-dashed border-border/60">
           <div className="flex flex-col items-center gap-3">
             <div className="p-4 bg-bg-main rounded-2xl border border-border">
@@ -145,7 +139,6 @@ const SharedWithMe = () => {
         </div>
       ) : (
         <div className="space-y-10">
-          {/* SHARED FOLDERS */}
           {folders.length > 0 && (
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
@@ -160,10 +153,10 @@ const SharedWithMe = () => {
                     <div key={folder.id} className="space-y-1">
                       <FolderCard
                         folder={folder}
-                        onNavigate={() => {}} // read-only for now
+                        onNavigate={() => {}}
                         onAction={() => {}}
                       />
-                      {/* Shared by badge */}
+
                       <p className="text-[10px] text-text-secondary px-1 truncate">
                         Shared by{" "}
                         <span className="font-bold text-text-primary">
@@ -179,7 +172,6 @@ const SharedWithMe = () => {
             </section>
           )}
 
-          {/* SHARED FILES */}
           {files.length > 0 && (
             <section className="space-y-4">
               <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest px-1">
@@ -200,7 +192,7 @@ const SharedWithMe = () => {
                         currentFolderId={file.folder_id ?? null}
                         folderName="Shared with me"
                       />
-                      {/* Shared by badge */}
+
                       <p className="text-[10px] text-text-secondary px-1 truncate">
                         By{" "}
                         <span className="font-bold text-text-primary">
@@ -218,7 +210,6 @@ const SharedWithMe = () => {
         </div>
       )}
 
-      {/* FILE PREVIEW */}
       <FilePreviewModal
         file={previewFile}
         isOpen={!!previewFile}

@@ -14,7 +14,6 @@ const formatSize = (bytes) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-// --- Format date ---
 const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString("en-US", {
     day: "numeric",
@@ -30,7 +29,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
   const [loading, setLoading] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(null);
 
-  // --- Fetch versions on open ---
   useEffect(() => {
     if (!isOpen || !file) return;
     fetchVersions();
@@ -63,7 +61,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
       maxWidth="max-w-lg"
     >
       <div className="space-y-5">
-        {/* File Info */}
         <div className="flex items-center gap-3 p-3 bg-bg-main rounded-2xl border border-border">
           <FileIcon fileName={file.name} size={20} />
           <div className="min-w-0">
@@ -76,14 +73,12 @@ const VersionModal = ({ isOpen, onClose, file }) => {
           </div>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-brand-blue border-t-transparent rounded-full" />
           </div>
         )}
 
-        {/* Empty State */}
         {!loading && versions.length === 0 && (
           <div className="text-center py-10 space-y-3">
             <div className="flex justify-center">
@@ -101,7 +96,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
           </div>
         )}
 
-        {/* Version List */}
         {!loading && versions.length > 0 && (
           <div className="space-y-3">
             {/* Header */}
@@ -110,7 +104,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
               {versions.length !== 1 ? "s" : ""}
             </p>
 
-            {/* Current Version Badge */}
             <div className="flex items-center gap-3 p-3 bg-brand-blue/5 border border-brand-blue/20 rounded-2xl">
               <div className="p-2 bg-brand-blue/10 rounded-xl shrink-0">
                 <FileIcon fileName={file.name} size={16} />
@@ -130,7 +123,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
               </div>
             </div>
 
-            {/* Previous Versions */}
             <AnimatePresence>
               {versions.map((version, index) => (
                 <motion.div
@@ -140,12 +132,10 @@ const VersionModal = ({ isOpen, onClose, file }) => {
                   transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-3 p-3 bg-bg-main border border-border rounded-2xl hover:border-brand-blue/30 transition-colors"
                 >
-                  {/* Version Icon */}
                   <div className="p-2 bg-surface rounded-xl border border-border shrink-0">
                     <History size={16} className="text-text-secondary" />
                   </div>
 
-                  {/* Version Info */}
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <p className="text-sm font-bold text-text-primary">
                       v{version.version_number}
@@ -170,7 +160,6 @@ const VersionModal = ({ isOpen, onClose, file }) => {
           </div>
         )}
 
-        {/* Info note */}
         <p className="text-[11px] text-text-secondary leading-relaxed px-1">
           Versions are saved automatically each time you re-upload this file.
           Previous versions are kept for reference.

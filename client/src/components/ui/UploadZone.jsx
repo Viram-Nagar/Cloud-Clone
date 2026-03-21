@@ -8,25 +8,19 @@ import FileIcon from "./FileIcon";
 import ProgressBar from "./ProgressBar";
 import Button from "./Button";
 
-// --- Per-file status ---
-// { id, file, progress, status: 'pending'|'uploading'|'done'|'error', error }
-
 const UploadZone = ({ currentFolderId, onUploadComplete }) => {
   const [uploadQueue, setUploadQueue] = useState([]);
 
-  // --- Helper: update one file in queue ---
   const updateFile = (id, updates) => {
     setUploadQueue((prev) =>
       prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
     );
   };
 
-  // --- Core Upload Logic ---
   const uploadFile = async (queueItem) => {
     const { id, file } = queueItem;
 
     try {
-      // STEP 1: Init — get fileId + storageKey
       updateFile(id, { status: "uploading", progress: 0 });
 
       const initRes = await API.post("/files/init", {
@@ -37,7 +31,6 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
 
       const { fileId } = initRes.data;
 
-      // STEP 2: Upload actual file with progress tracking
       const formData = new FormData();
       formData.append("file", file);
 
@@ -51,7 +44,6 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
         },
       });
 
-      // STEP 3: Done!
       updateFile(id, { status: "done", progress: 100 });
       toast.success(`${file.name} uploaded successfully`);
     } catch (err) {
@@ -74,9 +66,7 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
     }
   };
 
-  // --- Dropzone Config ---
   const onDrop = async (acceptedFiles) => {
-    // 1. Add all files to queue
     const newItems = acceptedFiles.map((file) => ({
       id: crypto.randomUUID(),
       file,
@@ -87,10 +77,8 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
 
     setUploadQueue((prev) => [...prev, ...newItems]);
 
-    // 2. Upload all files
     await Promise.all(newItems.map((item) => uploadFile(item)));
 
-    // 3. Refresh dashboard
     const allDone = newItems.every((item) => item.status !== "error");
     if (allDone) {
       onUploadComplete?.();
@@ -103,19 +91,16 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
     maxSize: 50 * 1024 * 1024, // 50MB
   });
 
-  // --- Remove from queue ---
   const removeFromQueue = (id) => {
     setUploadQueue((prev) => prev.filter((f) => f.id !== id));
   };
 
-  // --- Clear completed ---
   const clearCompleted = () => {
     setUploadQueue((prev) => prev.filter((f) => f.status !== "done"));
   };
 
   return (
     <div className="space-y-4">
-      {/* DROP ZONE AREA */}
       <div
         {...getRootProps()}
         className={`
@@ -163,7 +148,6 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
         </div>
       </div>
 
-      {/* UPLOAD QUEUE */}
       <AnimatePresence>
         {uploadQueue.length > 0 && (
           <motion.div
@@ -172,7 +156,6 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-3"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
                 {uploadQueue.length} file(s)
@@ -184,7 +167,6 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
               )}
             </div>
 
-            {/* File List */}
             {uploadQueue.map((item) => (
               <motion.div
                 key={item.id}
@@ -194,16 +176,13 @@ const UploadZone = ({ currentFolderId, onUploadComplete }) => {
                 exit={{ opacity: 0, x: 10 }}
                 className="flex items-center gap-3 p-3 bg-bg-main rounded-xl border border-border"
               >
-                {/* File Icon */}
                 <FileIcon fileName={item.file.name} size={20} />
 
-                {/* File Info + Progress */}
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="text-sm font-bold text-text-primary truncate">
                     {item.file.name}
                   </p>
 
-                  {/* Status */}
                   {item.status === "uploading" && (
                     <ProgressBar progress={item.progress} />
                   )}

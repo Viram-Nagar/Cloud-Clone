@@ -17,7 +17,6 @@ import Modal from "./Modal";
 import Button from "./Button";
 import Input from "./Input";
 
-// --- Role Badge ---
 const RoleBadge = ({ role }) => {
   const styles = {
     owner: {
@@ -48,13 +47,9 @@ const RoleBadge = ({ role }) => {
   );
 };
 
-// --- Main Component ---
 const ShareModal = ({ isOpen, onClose, resource }) => {
-  // resource = { id, name, type: 'file' | 'folder' }
-
   const [activeTab, setActiveTab] = useState("people");
 
-  // --- Tab 1: People state ---
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
   const [isSharing, setIsSharing] = useState(false);
@@ -62,7 +57,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
   const [currentShares, setCurrentShares] = useState([]);
   const [loadingShares, setLoadingShares] = useState(false);
 
-  // --- Tab 2: Link state ---
   const [publicLink, setPublicLink] = useState("");
   const [linkPassword, setLinkPassword] = useState("");
   const [linkExpiry, setLinkExpiry] = useState("");
@@ -70,11 +64,10 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
   const [linkError, setLinkError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // --- Fetch existing shares when modal opens ---
   useEffect(() => {
     if (!isOpen || !resource) return;
     fetchShares();
-    // Reset state on open
+
     setEmail("");
     setRole("viewer");
     setShareError("");
@@ -97,7 +90,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
     }
   };
 
-  // --- Share by email ---
   const handleShareByEmail = async (e) => {
     e.preventDefault();
     if (!email.trim()) return;
@@ -124,7 +116,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
     }
   };
 
-  // --- Revoke share ---
   const handleRevoke = async (shareId) => {
     try {
       await API.delete(`/shares/${shareId}`);
@@ -136,7 +127,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
     }
   };
 
-  // --- Generate public link ---
   const handleGenerateLink = async () => {
     setIsGenerating(true);
     setLinkError("");
@@ -157,7 +147,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
     }
   };
 
-  // --- Copy link to clipboard ---
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(publicLink);
@@ -180,7 +169,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
       maxWidth="max-w-lg"
     >
       <div className="space-y-5">
-        {/* --- TABS --- */}
         <div className="flex gap-1 bg-bg-main p-1 rounded-xl border border-border">
           {[
             { key: "people", icon: Users, label: "People" },
@@ -208,9 +196,7 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
           })}
         </div>
 
-        {/* --- TAB CONTENT --- */}
         <AnimatePresence mode="wait">
-          {/* ===== TAB 1: PEOPLE ===== */}
           {activeTab === "people" && (
             <motion.div
               key="people"
@@ -220,7 +206,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
               transition={{ duration: 0.15 }}
               className="space-y-5"
             >
-              {/* Invite Form */}
               <form onSubmit={handleShareByEmail} className="space-y-3">
                 <Input
                   label="Invite by email"
@@ -232,7 +217,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                   required
                 />
 
-                {/* Role Selector */}
                 <div className="flex gap-2">
                   {["viewer", "editor"].map((r) => (
                     <button
@@ -265,10 +249,8 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                 </Button>
               </form>
 
-              {/* Divider */}
               <div className="h-px bg-border" />
 
-              {/* Current Shares List */}
               <div className="space-y-2">
                 <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">
                   People with access
@@ -313,7 +295,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
             </motion.div>
           )}
 
-          {/* ===== TAB 2: PUBLIC LINK ===== */}
           {activeTab === "link" && (
             <motion.div
               key="link"
@@ -323,7 +304,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
               transition={{ duration: 0.15 }}
               className="space-y-4"
             >
-              {/* Optional Password */}
               <Input
                 label="Password (optional)"
                 type="password"
@@ -332,7 +312,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                 onChange={(e) => setLinkPassword(e.target.value)}
               />
 
-              {/* Optional Expiry */}
               <Input
                 label="Expires at (optional)"
                 type="datetime-local"
@@ -340,14 +319,12 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                 onChange={(e) => setLinkExpiry(e.target.value)}
               />
 
-              {/* Error */}
               {linkError && (
                 <p className="text-xs font-semibold text-red-500">
                   {linkError}
                 </p>
               )}
 
-              {/* Generate Button */}
               <Button
                 variant="primary"
                 className="w-full gap-2"
@@ -368,12 +345,10 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                     exit={{ opacity: 0, y: -6 }}
                     className="flex items-center gap-2 p-3 bg-bg-main border border-border rounded-xl"
                   >
-                    {/* Link text */}
                     <p className="text-xs text-text-secondary truncate flex-1 font-mono">
                       {publicLink}
                     </p>
 
-                    {/* Copy Button */}
                     <Button
                       variant="secondary"
                       size="sm"
@@ -394,7 +369,6 @@ const ShareModal = ({ isOpen, onClose, resource }) => {
                 )}
               </AnimatePresence>
 
-              {/* Info note */}
               <p className="text-[11px] text-text-secondary leading-relaxed">
                 Anyone with this link can view the{" "}
                 {resource.type === "folder" ? "folder" : "file"}.

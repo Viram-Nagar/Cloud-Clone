@@ -28,35 +28,6 @@ const FilePreviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // --- Fetch file info + signed URL ---
-  // useEffect(() => {
-  //   const fetchFile = async () => {
-  //     setLoading(true);
-  //     setError("");
-  //     try {
-  //       // Get signed URL
-  //       const res = await API.get(`/files/${fileId}/download`);
-  //       setPreviewUrl(res.data.downloadUrl);
-
-  //       // Get file metadata — from the download response or separately
-  //       // We store basic info in the URL as query params
-  //       setFile({
-  //         id: fileId,
-  //         name: searchParams.get("fileName") || "File",
-  //         mime_type: searchParams.get("mimeType") || "",
-  //         size_bytes: searchParams.get("sizeBytes") || 0,
-  //       });
-  //     } catch (err) {
-  //       console.error("Preview fetch failed:", err);
-  //       setError("Failed to load file. Please try again.");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchFile();
-  // }, [fileId]);
-
   useEffect(() => {
     const fetchFile = async () => {
       setLoading(true);
@@ -71,7 +42,6 @@ const FilePreviewPage = () => {
           size_bytes: searchParams.get("sizeBytes") || 0,
         });
 
-        // Track file open — fire and forget
         API.post(`/files/${fileId}/open`).catch(() => {});
       } catch (err) {
         console.error("Preview fetch failed:", err);
@@ -84,7 +54,6 @@ const FilePreviewPage = () => {
     fetchFile();
   }, [fileId]);
 
-  // --- Back navigation ---
   const handleBack = () => {
     if (source === "starred") {
       navigate("/starred");
@@ -92,11 +61,10 @@ const FilePreviewPage = () => {
     }
 
     if (source === "search") {
-      navigate(-1); // goes back to search page with same query
+      navigate(-1);
       return;
     }
 
-    // source === "dashboard"
     if (folderId && folderId !== "") {
       navigate(
         `/dashboard?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}&path=${encodeURIComponent(pathParam)}`,
@@ -106,7 +74,6 @@ const FilePreviewPage = () => {
     }
   };
 
-  // --- Download handler ---
   const handleDownload = async () => {
     if (!file) return;
     try {
@@ -126,9 +93,7 @@ const FilePreviewPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
-      {/* TOP BAR */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800 shrink-0">
-        {/* Left: Back button + file name */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={handleBack}
@@ -152,7 +117,6 @@ const FilePreviewPage = () => {
           </div>
         </div>
 
-        {/* Right: Download button */}
         <button
           onClick={handleDownload}
           disabled={!file || loading}
@@ -163,9 +127,7 @@ const FilePreviewPage = () => {
         </button>
       </div>
 
-      {/* CONTENT AREA */}
       <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-        {/* LOADING */}
         {loading && (
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin h-12 w-12 border-4 border-brand-blue border-t-transparent rounded-full" />
@@ -173,7 +135,6 @@ const FilePreviewPage = () => {
           </div>
         )}
 
-        {/* ERROR */}
         {error && !loading && (
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="p-4 bg-red-500/10 rounded-2xl">
@@ -190,7 +151,6 @@ const FilePreviewPage = () => {
           </div>
         )}
 
-        {/* IMAGE PREVIEW */}
         {!loading && !error && isImage && previewUrl && (
           <div className="w-full h-full flex items-center justify-center">
             <img
@@ -201,7 +161,6 @@ const FilePreviewPage = () => {
           </div>
         )}
 
-        {/* PDF PREVIEW */}
         {!loading && !error && isPDF && previewUrl && (
           <div className="w-full h-[calc(100vh-80px)]">
             <iframe
@@ -212,7 +171,6 @@ const FilePreviewPage = () => {
           </div>
         )}
 
-        {/* DOCX — no preview available */}
         {!loading && !error && isDocx && (
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="p-8 bg-blue-500/10 rounded-3xl border border-blue-500/20">
@@ -237,7 +195,6 @@ const FilePreviewPage = () => {
           </div>
         )}
 
-        {/* FALLBACK — unknown file type */}
         {!loading && !error && !isImage && !isPDF && !isDocx && previewUrl && (
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="p-8 bg-gray-800 rounded-3xl border border-gray-700">

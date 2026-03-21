@@ -1,12 +1,10 @@
 import React from "react";
 
 const ProgressBar = ({ progress = 0, label, subLabel, className = "" }) => {
-  // Ensure progress stays between 0 and 100
   const clampedProgress = Math.min(Math.max(progress, 0), 100);
 
   return (
     <div className={`w-full flex flex-col gap-2 ${className}`}>
-      {/* Labels: For storage text (e.g. 5GB of 15GB) */}
       {(label || subLabel) && (
         <div className="flex justify-between items-end px-1">
           {label && (
@@ -20,9 +18,7 @@ const ProgressBar = ({ progress = 0, label, subLabel, className = "" }) => {
         </div>
       )}
 
-      {/* The Track (Background) */}
       <div className="h-2 w-full bg-bg-main rounded-full overflow-hidden border border-border/30">
-        {/* The Fill (The Gradient Bar) */}
         <div
           className="h-full bg-brand-gradient transition-all duration-500 ease-out rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)]"
           style={{ width: `${clampedProgress}%` }}

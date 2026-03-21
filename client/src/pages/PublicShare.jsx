@@ -11,7 +11,6 @@ const PublicShare = () => {
   const { token } = useParams();
 
   const [status, setStatus] = useState("loading");
-  // loading | password_required | granted | expired | error
 
   const [resource, setResource] = useState(null);
   const [password, setPassword] = useState("");
@@ -20,7 +19,6 @@ const PublicShare = () => {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // --- 1. Fetch resource on load ---
   useEffect(() => {
     fetchResource();
   }, [token]);
@@ -48,7 +46,6 @@ const PublicShare = () => {
     }
   };
 
-  // --- 2. Submit password ---
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (!password.trim()) return;
@@ -58,7 +55,6 @@ const PublicShare = () => {
     setIsChecking(false);
   };
 
-  // --- 3. Download file ---
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
@@ -71,10 +67,8 @@ const PublicShare = () => {
     }
   };
 
-  // --- RENDER ---
   return (
     <div className="min-h-screen bg-bg-main flex items-center justify-center p-4 font-inter">
-      {/* Brand */}
       <div className="absolute top-6 left-6 flex items-center gap-2">
         <div className="bg-brand-gradient p-2 rounded-xl text-white">
           <Cloud size={20} fill="currentColor" />
@@ -85,7 +79,6 @@ const PublicShare = () => {
       </div>
 
       <Card className="w-full max-w-md shadow-2xl">
-        {/* LOADING */}
         {status === "loading" && (
           <div className="flex flex-col items-center py-12 gap-4">
             <div className="animate-spin h-10 w-10 border-4 border-brand-blue border-t-transparent rounded-full" />
@@ -95,7 +88,6 @@ const PublicShare = () => {
           </div>
         )}
 
-        {/* PASSWORD REQUIRED */}
         {status === "password_required" && (
           <div className="space-y-6">
             <div className="flex flex-col items-center gap-3 text-center">
@@ -134,7 +126,6 @@ const PublicShare = () => {
           </div>
         )}
 
-        {/* ACCESS GRANTED */}
         {status === "granted" && resource && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
@@ -173,7 +164,6 @@ const PublicShare = () => {
           </div>
         )}
 
-        {/* EXPIRED */}
         {status === "expired" && (
           <div className="flex flex-col items-center py-12 gap-4 text-center">
             <div className="p-4 bg-red-50 rounded-2xl">
@@ -188,7 +178,6 @@ const PublicShare = () => {
           </div>
         )}
 
-        {/* ERROR */}
         {status === "error" && (
           <div className="flex flex-col items-center py-12 gap-4 text-center">
             <h2 className="text-xl font-bold text-text-primary">

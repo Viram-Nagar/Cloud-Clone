@@ -8,12 +8,10 @@ const Input = ({
   id,
   ...props
 }) => {
-  // Generate a unique ID if one isn't provided for accessibility
   const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-      {/* Label - Simple and bold */}
       {label && (
         <label
           htmlFor={inputId}
@@ -23,7 +21,6 @@ const Input = ({
         </label>
       )}
 
-      {/* Input Field */}
       <input
         id={inputId}
         type={type}
@@ -41,7 +38,6 @@ const Input = ({
         {...props}
       />
 
-      {/* Error Message */}
       {error && (
         <span className="text-xs font-semibold text-error ml-1 animate-in fade-in slide-in-from-top-1">
           {error}

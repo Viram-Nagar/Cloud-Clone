@@ -8,21 +8,18 @@ const fileRoutes = require("./routes/fileRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const initCronJobs = require("./services/cronService");
 
-// 100 requests per 5 minutes
 const authLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 100,
   message: { message: "Too many attempts, please try again after 5 minutes" },
 });
 
-// General limiter for files — 200 requests per 15 mins
 const filesLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
   message: { message: "Too many requests, please slow down" },
 });
 
-// General limiter for shares — 100 requests per 15 mins
 const sharesLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -33,10 +30,9 @@ require("dotenv").config();
 
 const app = express();
 
-// Section 8: Security Middlewares
 app.use(helmet());
 const allowedOrigins = [
-  "http://localhost:5173", // Your current Vite dev server
+  "http://localhost:5173",
   "https://cloud-verse.vercel.app",
   "https://cloud-clone.vercel.app",
 ];
@@ -44,7 +40,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) === -1) {
         const msg =
@@ -61,13 +56,10 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
-// Apply only to auth routes
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/files", filesLimiter, fileRoutes);
 app.use("/api/shares", sharesLimiter, shareRoutes);
 
-// Start the automated tasks
 initCronJobs();
 
 const PORT = process.env.PORT || 5000;

@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// Persists grid/list preference in localStorage
 const useViewPreference = (key = "viewMode") => {
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem(key) || "grid",
