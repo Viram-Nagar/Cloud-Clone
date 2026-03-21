@@ -105,14 +105,36 @@ const Starred = () => {
   //   }
   // };
 
+  // const handleUnstar = async (item) => {
+  //   // FileCard/FolderCard already made the API call internally
+  //   // They call onStarToggle with no args after their own API call
+  //   // So we just need to remove the item from the list
+  //   if (!item) {
+  //     // We don't know which item was unstarred
+  //     // but FileCard/FolderCard already toggled it
+  //     // Just silently refresh WITHOUT showing loading state
+  //     try {
+  //       const res = await API.get("/files/stars");
+  //       setStarredItems(res.data.starredItems || []);
+  //     } catch (err) {
+  //       console.error("Refresh failed:", err);
+  //     }
+  //     return;
+  //   }
+  //   // This path runs when item is passed directly
+  //   try {
+  //     await API.post("/files/stars/toggle", {
+  //       fileId: item.type === "file" ? item.id : undefined,
+  //       folderId: item.type === "folder" ? item.id : undefined,
+  //     });
+  //     setStarredItems((prev) => prev.filter((i) => i.id !== item.id));
+  //   } catch (err) {
+  //     console.error("Unstar failed:", err);
+  //   }
+  // };
+
   const handleUnstar = async (item) => {
-    // FileCard/FolderCard already made the API call internally
-    // They call onStarToggle with no args after their own API call
-    // So we just need to remove the item from the list
     if (!item) {
-      // We don't know which item was unstarred
-      // but FileCard/FolderCard already toggled it
-      // Just silently refresh WITHOUT showing loading state
       try {
         const res = await API.get("/files/stars");
         setStarredItems(res.data.starredItems || []);
@@ -121,7 +143,6 @@ const Starred = () => {
       }
       return;
     }
-    // This path runs when item is passed directly
     try {
       await API.post("/files/stars/toggle", {
         fileId: item.type === "file" ? item.id : undefined,
