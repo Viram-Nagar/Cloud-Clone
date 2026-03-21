@@ -116,7 +116,7 @@ const Dashboard = () => {
         toast.success(`"${dragData.name}" moved successfully`);
       }
 
-      fetchContent();
+      fetchContent(currentFolderId);
       window.dispatchEvent(new Event("storage-updated"));
     } catch (err) {
       console.error("Move failed:", err);
@@ -144,7 +144,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchContent();
+    fetchContent(currentFolderId); // fetchContent(); previous code
   }, [currentFolderId]);
 
   const handleFolderClick = (id, name) => {
@@ -171,7 +171,7 @@ const Dashboard = () => {
       });
       setNewFolderName("");
       setIsFolderModalOpen(false);
-      fetchContent();
+      fetchContent(currentFolderId);
       toast.success("Folder created successfully");
     } catch (err) {
       console.error("Error creating folder:", err);
@@ -193,7 +193,7 @@ const Dashboard = () => {
     if (action === "delete") {
       try {
         await API.delete(`/files/${file.id}`);
-        fetchContent();
+        fetchContent(currentFolderId);
         window.dispatchEvent(new Event("storage-updated"));
         toast.success("File moved to trash");
       } catch (err) {
@@ -222,7 +222,7 @@ const Dashboard = () => {
     if (action === "delete") {
       try {
         await API.delete(`/files/folders/${folder.id}`);
-        fetchContent();
+        fetchContent(currentFolderId);
         toast.success("Folder moved to trash");
       } catch (err) {
         console.error("Folder delete failed:", err);
@@ -254,7 +254,7 @@ const Dashboard = () => {
       setIsRenameModalOpen(false);
       setRenameTarget(null);
       setNewName("");
-      fetchContent();
+      fetchContent(currentFolderId);
       toast.success(
         `${renameTarget.type === "folder" ? "Folder" : "File"} renamed successfully`,
       );
@@ -590,7 +590,7 @@ const Dashboard = () => {
             <UploadZone
               currentFolderId={currentFolderId}
               onUploadComplete={() => {
-                fetchContent();
+                fetchContent(currentFolderId);
                 setIsUploadModalOpen(false);
               }}
             />
