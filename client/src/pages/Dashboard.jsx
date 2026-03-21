@@ -143,31 +143,6 @@ const Dashboard = () => {
     }
   };
 
-  // const fetchContent  async (folderId) => {
-  //   setLoading(true);
-  //   try {
-  //     const [filesRes, foldersRes] = await Promise.all([
-  //       API.get("/files", { params: { folderId: folderId ?? undefined } }),
-  //       API.get("/files/folders", {
-  //         params: { parentId: folderId ?? undefined },
-  //       }),
-  //     ]);
-  //     setFiles(filesRes.data.files || []);
-  //     setFolders(foldersRes.data.folders || []);
-  //   } catch (err) {
-  //     console.error(
-  //       "Failed to fetch content:",
-  //       err.response?.data?.message || err.message,
-  //     );
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchContent(currentFolderId);
-  // }, [currentFolderId]);
-
   useEffect(() => {
     fetchContent();
   }, [currentFolderId]);
