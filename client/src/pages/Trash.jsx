@@ -212,20 +212,18 @@ const Trash = () => {
                     <span className="hidden sm:inline text-xs">Restore</span>
                   </Button>
 
-                  {item.type === "file" && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => {
-                        setDeleteTarget(item);
-                        setIsDeleteModalOpen(true);
-                      }}
-                    >
-                      <X size={13} />
-                      <span className="hidden sm:inline text-xs">Delete</span>
-                    </Button>
-                  )}
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      setDeleteTarget(item);
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
+                    <X size={13} />
+                    <span className="hidden sm:inline text-xs">Delete</span>
+                  </Button>
                 </div>
               </motion.div>
             ))}
